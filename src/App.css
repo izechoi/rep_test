@@ -1045,7 +1045,8 @@
     font-size: 0.9rem;
   }
   .detail-iframe-container {
-    height: 48vh; /* 소형 액정에서 스크롤을 고려한 적정 크기 할당 */
+    height: 500px; /* 게임 보드판과 내부 조작 버튼이 겹침 없이 모바일 한 화면에 완전히 들어오도록 넉넉한 높이로 설정 */
+    max-height: 70vh; /* 세로 해상도가 매우 작은 모바일 기기에서의 과도한 오버플로우 방지 */
   }
   .detail-player-controls {
     padding: 12px 16px;
