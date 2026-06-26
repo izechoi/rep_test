@@ -47,6 +47,11 @@ export default function GameDetailPage({ onGamePlayed, language }) {
     );
   }
 
+  // 깃허브 페이지 서브디렉토리 배포 경로에 맞춰 iframe 내 HTML5 게임 경로 조립
+  const gamePath = game.path.startsWith('http')
+    ? game.path
+    : `${import.meta.env.BASE_URL.replace(/\/$/, '')}${game.path}`;
+
   const handleIframeLoad = () => {
     setLoading(false);
     // 아이프레임 로드 완료 시 키보드 포커싱 활성화
@@ -109,7 +114,7 @@ export default function GameDetailPage({ onGamePlayed, language }) {
             )}
             <iframe
               ref={iframeRef}
-              src={game.path}
+              src={gamePath}
               title={game.title[language]}
               onLoad={handleIframeLoad}
               allowFullScreen
