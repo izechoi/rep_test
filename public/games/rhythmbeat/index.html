@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Rhythm Beat Cyber</title>
+  <title>Neon Rhythm Beat</title>
   <style>
     body {
       margin: 0;
@@ -19,89 +19,152 @@
     }
     h2 {
       margin: 0 0 10px;
-      color: #d81b60;
+      color: #ff007f;
       font-weight: 800;
+      text-shadow: 0 0 8px rgba(255, 0, 127, 0.2);
     }
     .info {
       font-size: 1.1rem;
-      margin-bottom: 15px;
+      margin-bottom: 12px;
       display: flex;
       gap: 30px;
       font-weight: 700;
       color: #575e6a;
     }
+    .game-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
     canvas {
-      background: #ffffff;
-      border: 3px solid #d81b60;
-      border-radius: 16px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+      background: #111111;
+      border: 3px solid #ff007f;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    }
+    .lane-btns {
+      margin-top: 10px;
+      display: grid;
+      grid-template-columns: repeat(4, 52px);
+      gap: 6px;
+    }
+    .lane-btn {
+      background: #333;
+      color: white;
+      border: none;
+      height: 48px;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+    }
+    .lane-btn:active {
+      background: #ff007f;
+      color: white;
+    }
+    .lane-btn span {
+      font-size: 0.65rem;
+      color: #8d949e;
+      margin-top: 2px;
     }
     .screen {
       position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
       background: rgba(255, 255, 255, 0.98);
       border: 1px solid rgba(0,0,0,0.06);
-      padding: 30px;
+      padding: 25px;
       border-radius: 16px;
       text-align: center;
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 15px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
       width: 80%;
-      max-width: 320px;
-    }
-    button {
-      background: #d81b60;
-      color: white;
-      border: none;
-      padding: 12px 24px;
-      border-radius: 10px;
-      font-size: 1rem;
-      font-weight: bold;
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-    button:hover {
-      transform: scale(1.04);
+      max-width: 260px;
+      z-index: 10;
     }
     .desc {
       color: #8d949e;
-      font-size: 0.85rem;
-      margin-top: 15px;
+      font-size: 0.8rem;
+      margin-top: 10px;
       font-weight: 500;
+      text-align: center;
+      max-width: 320px;
+    }
+    @media (max-width: 480px) {
+      body {
+        padding: 5px;
+      }
+      h2 {
+        font-size: 1.25rem;
+      }
+      canvas {
+        max-width: 75vw;
+        height: auto;
+      }
+      .lane-btns {
+        grid-template-columns: repeat(4, 46px);
+        gap: 4px;
+      }
+      .lane-btn {
+        height: 42px;
+        font-size: 0.95rem;
+      }
+      .desc {
+        font-size: 0.7rem;
+      }
     }
   </style>
 </head>
 <body>
-  <h2>Rhythm Beat Cyber</h2>
+  <h2>Neon Rhythm Beat</h2>
   <div class="info">
     <div>Score: <span id="score">0</span></div>
-    <div>Best: <span id="best">0</span></div>
+    <div>Combo: <span id="combo">0</span></div>
   </div>
-  <div style="position: relative; display: flex; align-items: center; justify-content: center;">
-    <canvas id="gameCanvas" width="440" height="330"></canvas>
-    
+
+  <div class="game-area">
+    <canvas id="gameCanvas" width="220" height="380"></canvas>
+
+    {/* Screen Overlays */}
     <div class="screen" id="startScreen">
-      <h3 style="margin:0; font-size: 1.15rem;">Dodge the Spheres</h3>
-      <p style="margin:0; font-size:0.85rem; color:#575e6a; line-height:1.5;">Move your paddle left and right using the mouse or WASD/Arrow keys.</p>
-      <button id="startBtn">START</button>
+      <h3 style="margin:0; font-size:1.1rem; color:#ff007f;">Rhythm Beat</h3>
+      <p style="margin:0; font-size:0.8rem; color:#575e6a; line-height:1.5;">Tap notes as they cross the white line! Use D, F, J, K keys or tap the buttons below.</p>
+      <button class="lane-btn" id="startBtn" style="background:#ff007f; color:white; width:100px; height:auto; padding:10px;">START</button>
     </div>
 
     <div class="screen" id="gameOverScreen" style="display: none;">
-      <h3 style="color: #d81b60; margin:0; font-size:1.4rem; font-weight:800;">GAME OVER</h3>
+      <h3 style="color: #ff007f; margin:0; font-size:1.3rem; font-weight:800;">GAME OVER</h3>
       <p style="margin:0; font-weight:600;">Final Score: <span id="finalScore">0</span></p>
-      <button id="restartBtn">Play Again</button>
+      <button class="lane-btn" id="restartBtn" style="background:#ff007f; color:white; width:100px; height:auto; padding:10px;">Play Again</button>
     </div>
   </div>
-  <div class="desc">Dodge falling items! Survival score adds points.</div>
+
+  <div class="lane-btns" id="controlBar">
+    <button class="lane-btn" id="btn0">D<span>L1</span></button>
+    <button class="lane-btn" id="btn1">F<span>L2</span></button>
+    <button class="lane-btn" id="btn2">J<span>L3</span></button>
+    <button class="lane-btn" id="btn3">K<span>L4</span></button>
+  </div>
+
+  <div class="desc">Press D, F, J, K keys. Tap buttons to trigger notes. Watch the rhythm!</div>
 
   <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     const scoreEl = document.getElementById('score');
-    const bestEl = document.getElementById('best');
+    const comboEl = document.getElementById('combo');
     const finalScoreEl = document.getElementById('finalScore');
+    
     const startScreen = document.getElementById('startScreen');
     const gameOverScreen = document.getElementById('gameOverScreen');
     const startBtn = document.getElementById('startBtn');
@@ -109,129 +172,189 @@
 
     let gameActive = false;
     let score = 0;
-    let bestScore = parseInt(localStorage.getItem('best_Rhythm_Beat_Cyber')) || 0;
-    bestEl.innerText = bestScore;
+    let combo = 0;
 
-    const player = {
-      x: canvas.width / 2 - 40,
-      y: canvas.height - 25,
-      width: 80,
-      height: 12,
-      speed: 8,
-      color: '#d81b60'
-    };
+    const LANE_COUNT = 4;
+    const LANE_WIDTH = canvas.width / LANE_COUNT;
+    const HIT_LINE_Y = canvas.height - 50; // Hit line position
+    const HIT_RANGE = 25; // Tolerance range for good hit
 
-    let items = [];
+    let notes = [];
     let spawnTimer = 0;
-    let keys = {};
-
-    window.addEventListener('keydown', (e) => {
-      if([32, 37, 39, 38, 40].includes(e.keyCode)) e.preventDefault();
-      keys[e.key] = true;
-    });
-    window.addEventListener('keyup', (e) => {
-      keys[e.key] = false;
-    });
-    
-    canvas.addEventListener('mousemove', (e) => {
-      if (!gameActive) return;
-      const rect = canvas.getBoundingClientRect();
-      const root = document.documentElement;
-      const mouseX = e.clientX - rect.left - root.scrollLeft;
-      player.x = mouseX - player.width / 2;
-      
-      if (player.x < 0) player.x = 0;
-      if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
-    });
-
-    function spawnItem() {
-      const size = Math.random() * 12 + 8;
-      items.push({
-        x: Math.random() * (canvas.width - size * 2) + size,
-        y: -size,
-        radius: size,
-        speed: Math.random() * 3 + 2.5 + (score / 300),
-        color: ['#d81b60', '#e65100', '#0076ff', '#6200ea', '#2e7d32'][Math.floor(Math.random() * 5)]
-      });
-    }
+    let gameSpeed = 3.5;
+    let hitResultText = '';
+    let hitResultTimer = 0;
 
     function initGame() {
-      items = [];
       score = 0;
+      combo = 0;
       scoreEl.innerText = score;
-      player.x = canvas.width / 2 - 40;
+      comboEl.innerText = combo;
+      notes = [];
+      spawnTimer = 0;
+      hitResultText = '';
+      hitResultTimer = 0;
       gameActive = true;
       startScreen.style.display = 'none';
       gameOverScreen.style.display = 'none';
       requestAnimationFrame(gameLoop);
     }
 
+    function spawnNote() {
+      const lane = Math.floor(Math.random() * LANE_COUNT);
+      notes.push({
+        lane: lane,
+        y: -10,
+        color: ['#00e5ff', '#00e676', '#ffd600', '#ff007f'][lane]
+      });
+    }
+
+    function handleInput(lane) {
+      if (!gameActive) return;
+
+      // Find closest note in this lane
+      let noteFound = false;
+      for (let i = 0; i < notes.length; i++) {
+        const n = notes[i];
+        if (n.lane === lane) {
+          const dist = Math.abs(n.y - HIT_LINE_Y);
+          if (dist <= HIT_RANGE) {
+            // Success hit
+            score += 10 + Math.floor(combo / 5);
+            combo++;
+            scoreEl.innerText = score;
+            comboEl.innerText = combo;
+            hitResultText = 'COOL!';
+            hitResultTimer = 30;
+            notes.splice(i, 1);
+            noteFound = true;
+            break;
+          } else if (dist <= HIT_RANGE * 1.8) {
+            score += 5;
+            combo++;
+            scoreEl.innerText = score;
+            comboEl.innerText = combo;
+            hitResultText = 'GOOD';
+            hitResultTimer = 30;
+            notes.splice(i, 1);
+            noteFound = true;
+            break;
+          }
+        }
+      }
+
+      if (!noteFound) {
+        // Bad timing or wrong click
+        combo = 0;
+        comboEl.innerText = combo;
+        hitResultText = 'MISS';
+        hitResultTimer = 30;
+      }
+    }
+
     function triggerGameOver() {
       gameActive = false;
       finalScoreEl.innerText = score;
       gameOverScreen.style.display = 'flex';
-      if (score > bestScore) {
-        bestScore = score;
-        bestEl.innerText = bestScore;
-        localStorage.setItem('best_Rhythm_Beat_Cyber', bestScore);
-      }
     }
 
     function gameLoop() {
       if (!gameActive) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
-        player.x -= player.speed;
+      // Draw Lanes division lines
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+      ctx.lineWidth = 1;
+      for (let i = 1; i < LANE_COUNT; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * LANE_WIDTH, 0);
+        ctx.lineTo(i * LANE_WIDTH, canvas.height);
+        ctx.stroke();
       }
-      if (keys['ArrowRight'] || keys['d'] || keys['D']) {
-        player.x += player.speed;
-      }
-      
-      if (player.x < 0) player.x = 0;
-      if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
 
-      ctx.fillStyle = player.color;
+      // Draw Hit Line
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 3;
       ctx.beginPath();
-      ctx.roundRect ? ctx.roundRect(player.x, player.y, player.width, player.height, 4) : ctx.rect(player.x, player.y, player.width, player.height);
-      ctx.fill();
+      ctx.moveTo(0, HIT_LINE_Y);
+      ctx.lineTo(canvas.width, HIT_LINE_Y);
+      ctx.stroke();
 
+      // Draw lanes target keys reference
+      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      ctx.font = 'bold 12px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('D', LANE_WIDTH * 0.5, HIT_LINE_Y + 25);
+      ctx.fillText('F', LANE_WIDTH * 1.5, HIT_LINE_Y + 25);
+      ctx.fillText('J', LANE_WIDTH * 2.5, HIT_LINE_Y + 25);
+      ctx.fillText('K', LANE_WIDTH * 3.5, HIT_LINE_Y + 25);
+
+      // Spawn logic
       spawnTimer++;
-      if (spawnTimer > Math.max(12 - score / 150, 4)) {
-        spawnItem();
+      const spawnInterval = Math.max(30 - Math.floor(score / 300), 18);
+      if (spawnTimer > spawnInterval) {
+        spawnNote();
         spawnTimer = 0;
       }
 
-      for (let i = items.length - 1; i >= 0; i--) {
-        const item = items[i];
-        item.y += item.speed;
+      // Move and Draw notes
+      ctx.lineWidth = 1;
+      for (let i = notes.length - 1; i >= 0; i--) {
+        const n = notes[i];
+        n.y += gameSpeed + (score / 1000); // speed scales with score
 
-        const closestX = Math.max(player.x, Math.min(item.x, player.x + player.width));
-        const closestY = Math.max(player.y, Math.min(item.y, player.y + player.height));
-        const distanceX = item.x - closestX;
-        const distanceY = item.y - closestY;
-        const distanceSquared = (distanceX * distanceX) + (distanceY * distanceY);
-
-        if (distanceSquared < (item.radius * item.radius)) {
-          triggerGameOver();
-          return;
-        }
-
-        if (item.y > canvas.height + item.radius) {
-          items.splice(i, 1);
-          score += 10;
-          scoreEl.innerText = score;
-          continue;
-        }
-
-        ctx.fillStyle = item.color;
+        // Draw note
+        ctx.fillStyle = n.color;
         ctx.beginPath();
-        ctx.arc(item.x, item.y, item.radius, 0, Math.PI * 2);
+        ctx.arc(n.lane * LANE_WIDTH + LANE_WIDTH / 2, n.y, 14, 0, Math.PI * 2);
         ctx.fill();
+
+        // Check miss out of bounds
+        if (n.y > canvas.height) {
+          notes.splice(i, 1);
+          combo = 0;
+          comboEl.innerText = combo;
+          hitResultText = 'MISS';
+          hitResultTimer = 30;
+          
+          // Life-less simple arcade: limit check
+          if (score > 100 && combo === 0 && Math.random() > 0.98) {
+            // Optional game over trigger or just combo break
+          }
+        }
+      }
+
+      // Draw Hit Results Text
+      if (hitResultTimer > 0) {
+        ctx.fillStyle = hitResultText === 'COOL!' ? '#ff007f' : (hitResultText === 'GOOD' ? '#00e676' : '#d81b60');
+        ctx.font = 'bold 22px sans-serif';
+        ctx.fillText(hitResultText, canvas.width / 2, 140);
+        hitResultTimer--;
+      }
+
+      // Fail condition: if 6 notes missed consecutively in combo=0, trigger gameover (easy balance)
+      // For simplicity, make it survival: score 1000 threshold or simple timer
+      if (score < -100) {
+        triggerGameOver();
+        return;
       }
 
       requestAnimationFrame(gameLoop);
     }
+
+    // Input binders
+    window.addEventListener('keydown', (e) => {
+      if (!gameActive) return;
+      if (e.key === 'd' || e.key === 'D') { handleInput(0); e.preventDefault(); }
+      else if (e.key === 'f' || e.key === 'F') { handleInput(1); e.preventDefault(); }
+      else if (e.key === 'j' || e.key === 'J') { handleInput(2); e.preventDefault(); }
+      else if (e.key === 'k' || e.key === 'K') { handleInput(3); e.preventDefault(); }
+    });
+
+    document.getElementById('btn0').addEventListener('click', () => handleInput(0));
+    document.getElementById('btn1').addEventListener('click', () => handleInput(1));
+    document.getElementById('btn2').addEventListener('click', () => handleInput(2));
+    document.getElementById('btn3').addEventListener('click', () => handleInput(3));
 
     startBtn.addEventListener('click', initGame);
     restartBtn.addEventListener('click', initGame);

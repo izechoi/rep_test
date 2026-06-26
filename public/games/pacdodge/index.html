@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pac-Dodge Runner</title>
+  <title>Cyber Pac-Dodge</title>
   <style>
     body {
       margin: 0;
@@ -19,8 +19,9 @@
     }
     h2 {
       margin: 0 0 10px;
-      color: #ff9900;
+      color: #ffd600;
       font-weight: 800;
+      text-shadow: 0 0 8px rgba(255, 214, 0, 0.2);
     }
     .info {
       font-size: 1.1rem;
@@ -30,71 +31,137 @@
       font-weight: 700;
       color: #575e6a;
     }
+    .game-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
     canvas {
-      background: #ffffff;
-      border: 3px solid #ff9900;
+      background: #000000;
+      border: 3px solid #ffd600;
       border-radius: 16px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
     }
     .screen {
       position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
       background: rgba(255, 255, 255, 0.98);
       border: 1px solid rgba(0,0,0,0.06);
-      padding: 30px;
+      padding: 25px;
       border-radius: 16px;
       text-align: center;
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 15px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
       width: 80%;
-      max-width: 320px;
+      max-width: 280px;
+      z-index: 10;
     }
-    button {
-      background: #ff9900;
-      color: white;
+    .btn {
+      background: #ffd600;
+      color: #1e2229;
       border: none;
-      padding: 12px 24px;
-      border-radius: 10px;
-      font-size: 1rem;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 0.95rem;
       font-weight: bold;
       cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
     }
-    button:hover {
-      transform: scale(1.04);
+    .btn:active {
+      transform: scale(0.95);
+    }
+    .d-pad {
+      margin-top: 12px;
+      display: grid;
+      grid-template-columns: repeat(3, 40px);
+      grid-template-rows: repeat(2, 40px);
+      gap: 6px;
+    }
+    .d-btn {
+      background: #333;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+    }
+    .d-btn:active {
+      background: #ffd600;
+      color: #1e2229;
     }
     .desc {
       color: #8d949e;
       font-size: 0.85rem;
       margin-top: 15px;
       font-weight: 500;
+      text-align: center;
+      max-width: 320px;
+    }
+    @media (max-width: 480px) {
+      body {
+        padding: 5px;
+      }
+      h2 {
+        font-size: 1.25rem;
+      }
+      canvas {
+        max-width: 80vw;
+        height: auto;
+      }
+      .d-pad {
+        grid-template-columns: repeat(3, 36px);
+        grid-template-rows: repeat(2, 36px);
+      }
+      .desc {
+        font-size: 0.75rem;
+      }
     }
   </style>
 </head>
 <body>
-  <h2>Pac-Dodge Runner</h2>
+  <h2>Cyber Pac-Dodge</h2>
   <div class="info">
     <div>Score: <span id="score">0</span></div>
     <div>Best: <span id="best">0</span></div>
   </div>
-  <div style="position: relative; display: flex; align-items: center; justify-content: center;">
-    <canvas id="gameCanvas" width="440" height="330"></canvas>
-    
+
+  <div class="game-area">
+    <canvas id="gameCanvas" width="360" height="360"></canvas>
+
+    {/* Screen Overlays */}
     <div class="screen" id="startScreen">
-      <h3 style="margin:0; font-size: 1.15rem;">Dodge the Spheres</h3>
-      <p style="margin:0; font-size:0.85rem; color:#575e6a; line-height:1.5;">Move your paddle left and right using the mouse or WASD/Arrow keys.</p>
-      <button id="startBtn">START</button>
+      <h3 style="margin:0; font-size:1.1rem; color:#ffd600; text-shadow:none;">Pac-Dodge</h3>
+      <p style="margin:0; font-size:0.8rem; color:#575e6a; line-height:1.5;">Control Pacman using Keyboard Arrow keys or screen D-Pad. Eat cookies (🍬) and dodge the chasing ghosts (👻)!</p>
+      <button class="btn" id="startBtn">START</button>
     </div>
 
     <div class="screen" id="gameOverScreen" style="display: none;">
-      <h3 style="color: #d81b60; margin:0; font-size:1.4rem; font-weight:800;">GAME OVER</h3>
+      <h3 style="color: #d81b60; margin:0; font-size:1.3rem; font-weight:800;">GAME OVER</h3>
       <p style="margin:0; font-weight:600;">Final Score: <span id="finalScore">0</span></p>
-      <button id="restartBtn">Play Again</button>
+      <button class="btn" id="restartBtn">Play Again</button>
     </div>
   </div>
-  <div class="desc">Dodge falling items! Survival score adds points.</div>
+
+  <div class="d-pad" id="dPad">
+    <div></div>
+    <button class="d-btn" id="btnUp">▲</button>
+    <div></div>
+    <button class="d-btn" id="btnLeft">◀</button>
+    <button class="d-btn" id="btnDown">▼</button>
+    <button class="d-btn" id="btnRight">▶</button>
+  </div>
+
+  <div class="desc">Dodge ghosts and collect cookies! Surviving increases the chase speed.</div>
 
   <script>
     const canvas = document.getElementById('gameCanvas');
@@ -102,6 +169,7 @@
     const scoreEl = document.getElementById('score');
     const bestEl = document.getElementById('best');
     const finalScoreEl = document.getElementById('finalScore');
+    
     const startScreen = document.getElementById('startScreen');
     const gameOverScreen = document.getElementById('gameOverScreen');
     const startBtn = document.getElementById('startBtn');
@@ -109,61 +177,68 @@
 
     let gameActive = false;
     let score = 0;
-    let bestScore = parseInt(localStorage.getItem('best_Pac-Dodge_Runner')) || 0;
+    let bestScore = parseInt(localStorage.getItem('best_pac_dodge')) || 0;
     bestEl.innerText = bestScore;
 
+    // Pacman physics
     const player = {
-      x: canvas.width / 2 - 40,
-      y: canvas.height - 25,
-      width: 80,
-      height: 12,
-      speed: 8,
-      color: '#ff9900'
+      x: 180,
+      y: 180,
+      radius: 12,
+      speed: 4,
+      dx: 0,
+      dy: 0,
+      color: '#ffd600'
     };
 
-    let items = [];
+    // Cookie target
+    const cookie = {
+      x: 0,
+      y: 0,
+      radius: 6,
+      color: '#ff8a80'
+    };
+
+    let ghosts = [];
     let spawnTimer = 0;
-    let keys = {};
-
-    window.addEventListener('keydown', (e) => {
-      if([32, 37, 39, 38, 40].includes(e.keyCode)) e.preventDefault();
-      keys[e.key] = true;
-    });
-    window.addEventListener('keyup', (e) => {
-      keys[e.key] = false;
-    });
-    
-    canvas.addEventListener('mousemove', (e) => {
-      if (!gameActive) return;
-      const rect = canvas.getBoundingClientRect();
-      const root = document.documentElement;
-      const mouseX = e.clientX - rect.left - root.scrollLeft;
-      player.x = mouseX - player.width / 2;
-      
-      if (player.x < 0) player.x = 0;
-      if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
-    });
-
-    function spawnItem() {
-      const size = Math.random() * 12 + 8;
-      items.push({
-        x: Math.random() * (canvas.width - size * 2) + size,
-        y: -size,
-        radius: size,
-        speed: Math.random() * 3 + 2.5 + (score / 300),
-        color: ['#d81b60', '#e65100', '#0076ff', '#6200ea', '#2e7d32'][Math.floor(Math.random() * 5)]
-      });
-    }
 
     function initGame() {
-      items = [];
       score = 0;
       scoreEl.innerText = score;
-      player.x = canvas.width / 2 - 40;
+      player.x = 180;
+      player.y = 180;
+      player.dx = 0;
+      player.dy = 0;
+      ghosts = [];
+      spawnTimer = 0;
+      spawnCookie();
       gameActive = true;
       startScreen.style.display = 'none';
       gameOverScreen.style.display = 'none';
       requestAnimationFrame(gameLoop);
+    }
+
+    function spawnCookie() {
+      cookie.x = Math.random() * (canvas.width - 40) + 20;
+      cookie.y = Math.random() * (canvas.height - 40) + 20;
+    }
+
+    function spawnGhost() {
+      // Spawn at canvas edge
+      const side = Math.floor(Math.random() * 4);
+      let x, y;
+      if (side === 0) { x = 0; y = Math.random() * canvas.height; } // Left
+      else if (side === 1) { x = canvas.width; y = Math.random() * canvas.height; } // Right
+      else if (side === 2) { x = Math.random() * canvas.width; y = 0; } // Top
+      else { x = Math.random() * canvas.width; y = canvas.height; } // Bottom
+
+      ghosts.push({
+        x: x,
+        y: y,
+        radius: 11,
+        speed: Math.random() * 0.8 + 0.8 + (score / 400),
+        color: ['#00e5ff', '#ff1744', '#ff4081', '#ffab00'][Math.floor(Math.random() * 4)]
+      });
     }
 
     function triggerGameOver() {
@@ -173,7 +248,7 @@
       if (score > bestScore) {
         bestScore = score;
         bestEl.innerText = bestScore;
-        localStorage.setItem('best_Pac-Dodge_Runner', bestScore);
+        localStorage.setItem('best_pac_dodge', bestScore);
       }
     }
 
@@ -181,57 +256,89 @@
       if (!gameActive) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
-        player.x -= player.speed;
-      }
-      if (keys['ArrowRight'] || keys['d'] || keys['D']) {
-        player.x += player.speed;
-      }
-      
-      if (player.x < 0) player.x = 0;
-      if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
-
-      ctx.fillStyle = player.color;
+      // Draw Cookie
+      ctx.fillStyle = cookie.color;
       ctx.beginPath();
-      ctx.roundRect ? ctx.roundRect(player.x, player.y, player.width, player.height, 4) : ctx.rect(player.x, player.y, player.width, player.height);
+      ctx.arc(cookie.x, cookie.y, cookie.radius, 0, Math.PI * 2);
       ctx.fill();
 
+      // Move player & wall collision
+      player.x += player.dx;
+      player.y += player.dy;
+      if (player.x - player.radius < 0) player.x = player.radius;
+      if (player.x + player.radius > canvas.width) player.x = canvas.width - player.radius;
+      if (player.y - player.radius < 0) player.y = player.radius;
+      if (player.y + player.radius > canvas.height) player.y = canvas.height - player.radius;
+
+      // Draw player (Pacman shape)
+      ctx.fillStyle = player.color;
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, player.radius, 0.2 * Math.PI, 1.8 * Math.PI); // Open mouth
+      ctx.lineTo(player.x, player.y);
+      ctx.fill();
+
+      // Check cookie collection
+      const distToCookie = Math.hypot(player.x - cookie.x, player.y - cookie.y);
+      if (distToCookie < player.radius + cookie.radius) {
+        score += 10;
+        scoreEl.innerText = score;
+        spawnCookie();
+      }
+
+      // Spawn Ghost
       spawnTimer++;
-      if (spawnTimer > Math.max(12 - score / 150, 4)) {
-        spawnItem();
+      if (spawnTimer > 100) {
+        spawnGhost();
         spawnTimer = 0;
       }
 
-      for (let i = items.length - 1; i >= 0; i--) {
-        const item = items[i];
-        item.y += item.speed;
+      // Render ghosts & chase
+      for (let i = ghosts.length - 1; i >= 0; i--) {
+        const g = ghosts[i];
+        
+        // Chasing logic
+        const angle = Math.atan2(player.y - g.y, player.x - g.x);
+        g.x += Math.cos(angle) * g.speed;
+        g.y += Math.sin(angle) * g.speed;
 
-        const closestX = Math.max(player.x, Math.min(item.x, player.x + player.width));
-        const closestY = Math.max(player.y, Math.min(item.y, player.y + player.height));
-        const distanceX = item.x - closestX;
-        const distanceY = item.y - closestY;
-        const distanceSquared = (distanceX * distanceX) + (distanceY * distanceY);
+        // Draw ghost body
+        ctx.fillStyle = g.color;
+        ctx.beginPath();
+        ctx.arc(g.x, g.y - 2, g.radius, Math.PI, 0, false);
+        ctx.lineTo(g.x + g.radius, g.y + g.radius);
+        ctx.lineTo(g.x - g.radius, g.y + g.radius);
+        ctx.closePath();
+        ctx.fill();
 
-        if (distanceSquared < (item.radius * item.radius)) {
+        // Check collision
+        const distToPlayer = Math.hypot(player.x - g.x, player.y - g.y);
+        if (distToPlayer < player.radius + g.radius) {
           triggerGameOver();
           return;
         }
-
-        if (item.y > canvas.height + item.radius) {
-          items.splice(i, 1);
-          score += 10;
-          scoreEl.innerText = score;
-          continue;
-        }
-
-        ctx.fillStyle = item.color;
-        ctx.beginPath();
-        ctx.arc(item.x, item.y, item.radius, 0, Math.PI * 2);
-        ctx.fill();
       }
 
       requestAnimationFrame(gameLoop);
     }
+
+    // Input handlers
+    function setDirection(dx, dy) {
+      player.dx = dx * player.speed;
+      player.dy = dy * player.speed;
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (!gameActive) return;
+      if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') { setDirection(0, -1); e.preventDefault(); }
+      else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') { setDirection(0, 1); e.preventDefault(); }
+      else if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') { setDirection(-1, 0); e.preventDefault(); }
+      else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') { setDirection(1, 0); e.preventDefault(); }
+    });
+
+    document.getElementById('btnUp').addEventListener('click', () => setDirection(0, -1));
+    document.getElementById('btnDown').addEventListener('click', () => setDirection(0, 1));
+    document.getElementById('btnLeft').addEventListener('click', () => setDirection(-1, 0));
+    document.getElementById('btnRight').addEventListener('click', () => setDirection(1, 0));
 
     startBtn.addEventListener('click', initGame);
     restartBtn.addEventListener('click', initGame);

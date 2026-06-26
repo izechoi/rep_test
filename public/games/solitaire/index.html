@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Neon Solitaire Club</title>
+  <title>Solitaire Lite</title>
   <style>
     body {
       margin: 0;
@@ -19,218 +19,379 @@
     }
     h2 {
       margin: 0 0 10px;
-      color: #0076ff;
+      color: #0d47a1;
       font-weight: 800;
     }
     .info {
       font-size: 1.1rem;
-      margin-bottom: 15px;
+      margin-bottom: 12px;
       display: flex;
       gap: 30px;
       font-weight: 700;
       color: #575e6a;
     }
-    canvas {
-      background: #ffffff;
-      border: 3px solid #0076ff;
+    .board-container {
+      position: relative;
+      background: #2e7d32; /* Green felt table background */
+      padding: 15px;
       border-radius: 16px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+      border: 3px solid #0d47a1;
+      width: 90%;
+      max-width: 420px;
+    }
+    .columns {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      min-height: 150px;
+      margin-bottom: 20px;
+    }
+    .col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+    .card {
+      width: 52px;
+      height: 76px;
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 4px;
+      font-size: 0.9rem;
+      font-weight: bold;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+      cursor: pointer;
+      user-select: none;
+      position: absolute;
+    }
+    .card.red {
+      color: #d32f2f;
+    }
+    .card.black {
+      color: #1a1a1a;
+    }
+    .deck-area {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      border-top: 1px solid rgba(255,255,255,0.2);
+      padding-top: 15px;
+    }
+    .card-deck {
+      background: #1565c0;
+      border: 2px solid white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1.5rem;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    }
+    .card-waste {
+      border: 2px solid #ffd54f;
+      cursor: default;
+      position: relative;
     }
     .screen {
       position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
       background: rgba(255, 255, 255, 0.98);
       border: 1px solid rgba(0,0,0,0.06);
-      padding: 30px;
+      padding: 25px;
       border-radius: 16px;
       text-align: center;
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 15px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
       width: 80%;
-      max-width: 320px;
+      max-width: 260px;
+      z-index: 10;
+      color: #1e2229;
     }
     button {
-      background: #0076ff;
+      background: #0d47a1;
       color: white;
       border: none;
-      padding: 12px 24px;
-      border-radius: 10px;
-      font-size: 1rem;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 0.95rem;
       font-weight: bold;
       cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
     }
     button:hover {
-      transform: scale(1.04);
+      transform: scale(1.03);
     }
     .desc {
       color: #8d949e;
       font-size: 0.85rem;
-      margin-top: 15px;
+      margin-top: 12px;
       font-weight: 500;
+      text-align: center;
+    }
+    @media (max-width: 480px) {
+      body {
+        padding: 5px;
+      }
+      h2 {
+        font-size: 1.25rem;
+      }
+      .board-container {
+        padding: 10px;
+      }
+      .card {
+        width: 42px;
+        height: 64px;
+        font-size: 0.75rem;
+      }
+      .card-deck, .card-waste {
+        width: 42px !important;
+        height: 64px !important;
+      }
+      .columns {
+        min-height: 120px;
+        gap: 4px;
+      }
+      .desc {
+        font-size: 0.75rem;
+      }
     }
   </style>
 </head>
 <body>
-  <h2>Neon Solitaire Club</h2>
+  <h2>Solitaire Lite</h2>
   <div class="info">
+    <div>Cards Left: <span id="cardsLeft">0</span></div>
     <div>Score: <span id="score">0</span></div>
-    <div>Best: <span id="best">0</span></div>
   </div>
-  <div style="position: relative; display: flex; align-items: center; justify-content: center;">
-    <canvas id="gameCanvas" width="440" height="330"></canvas>
-    
+
+  <div class="board-container">
+    <div class="columns" id="columns"></div>
+
+    <div class="deck-area">
+      <div style="text-align: center;">
+        <div class="card card-deck" id="deckCard">🎴</div>
+        <span style="color:white; font-size:0.75rem; display:block; margin-top:4px;">Draw Deck</span>
+      </div>
+      <div style="text-align: center;">
+        <div class="card card-waste" id="wasteCard" style="position:static;"></div>
+        <span style="color:white; font-size:0.75rem; display:block; margin-top:4px;">Target pile</span>
+      </div>
+    </div>
+
+    {/* Screen Overlays */}
     <div class="screen" id="startScreen">
-      <h3 style="margin:0; font-size: 1.15rem;">Dodge the Spheres</h3>
-      <p style="margin:0; font-size:0.85rem; color:#575e6a; line-height:1.5;">Move your paddle left and right using the mouse or WASD/Arrow keys.</p>
+      <h3 style="margin:0; font-size:1.1rem; color:#0d47a1;">Golf Solitaire</h3>
+      <p style="margin:0; font-size:0.8rem; color:#575e6a; line-height:1.5;">Clear all cards from the table! Click a card that is exactly 1 higher or 1 lower than the target card. Click Draw Deck if stuck.</p>
       <button id="startBtn">START</button>
     </div>
 
     <div class="screen" id="gameOverScreen" style="display: none;">
-      <h3 style="color: #d81b60; margin:0; font-size:1.4rem; font-weight:800;">GAME OVER</h3>
-      <p style="margin:0; font-weight:600;">Final Score: <span id="finalScore">0</span></p>
+      <h3 style="color: #2e7d32; margin:0; font-size:1.4rem; font-weight:800;" id="endTitle">CONGRATS!</h3>
+      <p style="margin:0; font-weight:600;">Score: <span id="finalScore">0</span></p>
       <button id="restartBtn">Play Again</button>
     </div>
   </div>
-  <div class="desc">Dodge falling items! Survival score adds points.</div>
+
+  <div class="desc">Clear rows of cards! Ace matches 2, King matches Queen (Classic Golf rules).</div>
 
   <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
+    const columnsEl = document.getElementById('columns');
+    const deckCard = document.getElementById('deckCard');
+    const wasteCard = document.getElementById('wasteCard');
+    const cardsLeftEl = document.getElementById('cardsLeft');
     const scoreEl = document.getElementById('score');
-    const bestEl = document.getElementById('best');
-    const finalScoreEl = document.getElementById('finalScore');
+    
     const startScreen = document.getElementById('startScreen');
     const gameOverScreen = document.getElementById('gameOverScreen');
     const startBtn = document.getElementById('startBtn');
     const restartBtn = document.getElementById('restartBtn');
+    const endTitle = document.getElementById('endTitle');
 
-    let gameActive = false;
-    let score = 0;
-    let bestScore = parseInt(localStorage.getItem('best_Neon_Solitaire_Club')) || 0;
-    bestEl.innerText = bestScore;
-
-    const player = {
-      x: canvas.width / 2 - 40,
-      y: canvas.height - 25,
-      width: 80,
-      height: 12,
-      speed: 8,
-      color: '#0076ff'
-    };
-
-    let items = [];
-    let spawnTimer = 0;
-    let keys = {};
-
-    window.addEventListener('keydown', (e) => {
-      if([32, 37, 39, 38, 40].includes(e.keyCode)) e.preventDefault();
-      keys[e.key] = true;
-    });
-    window.addEventListener('keyup', (e) => {
-      keys[e.key] = false;
-    });
+    const SUITS = ['♠', '♥', '♦', '♣'];
+    const VALUES = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
     
-    canvas.addEventListener('mousemove', (e) => {
-      if (!gameActive) return;
-      const rect = canvas.getBoundingClientRect();
-      const root = document.documentElement;
-      const mouseX = e.clientX - rect.left - root.scrollLeft;
-      player.x = mouseX - player.width / 2;
-      
-      if (player.x < 0) player.x = 0;
-      if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
-    });
-
-    function spawnItem() {
-      const size = Math.random() * 12 + 8;
-      items.push({
-        x: Math.random() * (canvas.width - size * 2) + size,
-        y: -size,
-        radius: size,
-        speed: Math.random() * 3 + 2.5 + (score / 300),
-        color: ['#d81b60', '#e65100', '#0076ff', '#6200ea', '#2e7d32'][Math.floor(Math.random() * 5)]
-      });
-    }
+    let deck = [];
+    let boardCols = [[], [], [], [], []]; // 5 columns
+    let activeWaste = null; // target card
+    let score = 0;
+    let gameActive = false;
 
     function initGame() {
-      items = [];
       score = 0;
       scoreEl.innerText = score;
-      player.x = canvas.width / 2 - 40;
       gameActive = true;
       startScreen.style.display = 'none';
       gameOverScreen.style.display = 'none';
-      requestAnimationFrame(gameLoop);
+      
+      generateDeck();
+      dealCards();
+      renderBoard();
     }
 
-    function triggerGameOver() {
+    function generateDeck() {
+      deck = [];
+      for (let s = 0; s < 4; s++) {
+        for (let v = 0; v < 13; v++) {
+          deck.push({
+            value: VALUES[v],
+            valNum: v + 1, // A=1, 2=2... K=13
+            suit: SUITS[s],
+            isRed: s === 1 || s === 2
+          });
+        }
+      }
+      shuffle(deck);
+    }
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+    }
+
+    function dealCards() {
+      boardCols = [[], [], [], [], []];
+      // Deal 4 cards to each of the 5 columns
+      for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 5; c++) {
+          boardCols[c].push(deck.pop());
+        }
+      }
+      // Set initial waste target card
+      activeWaste = deck.pop();
+    }
+
+    function renderBoard() {
+      columnsEl.innerHTML = '';
+      
+      let tableCardsCount = 0;
+
+      // Render columns
+      for (let c = 0; c < 5; c++) {
+        const colDiv = document.createElement('div');
+        colDiv.className = 'col';
+        
+        const colCards = boardCols[c];
+        tableCardsCount += colCards.length;
+
+        colCards.forEach((card, idx) => {
+          const cardDiv = document.createElement('div');
+          cardDiv.className = `card ${card.isRed ? 'red' : 'black'}`;
+          // Stack overlapping cards using absolute positions
+          cardDiv.style.top = `${idx * 22}px`;
+          
+          cardDiv.innerHTML = `
+            <div>${card.value}${card.suit}</div>
+            <div style="align-self: flex-end; transform: rotate(180deg);">${card.value}${card.suit}</div>
+          `;
+
+          // Only the bottom-most card in the column can be clicked
+          if (idx === colCards.length - 1) {
+            cardDiv.addEventListener('click', () => tableCardClick(c, card));
+          } else {
+            cardDiv.style.opacity = '0.9'; // dim stacked cards
+            cardDiv.style.cursor = 'default';
+          }
+
+          colDiv.appendChild(cardDiv);
+        });
+
+        columnsEl.appendChild(colDiv);
+      }
+
+      cardsLeftEl.innerText = tableCardsCount;
+
+      // Render Waste Card
+      if (activeWaste) {
+        wasteCard.className = `card card-waste ${activeWaste.isRed ? 'red' : 'black'}`;
+        wasteCard.innerHTML = `
+          <div>${activeWaste.value}${activeWaste.suit}</div>
+          <div style="align-self: flex-end; transform: rotate(180deg);">${activeWaste.value}${activeWaste.suit}</div>
+        `;
+      }
+
+      // Render deck status
+      if (deck.length > 0) {
+        deckCard.style.background = '#1565c0';
+        deckCard.innerText = '🎴';
+        deckCard.style.cursor = 'pointer';
+      } else {
+        deckCard.style.background = 'transparent';
+        deckCard.innerText = 'Empty';
+        deckCard.style.cursor = 'default';
+      }
+
+      // Check win condition
+      if (tableCardsCount === 0 && gameActive) {
+        triggerGameOver(true);
+      }
+    }
+
+    function tableCardClick(colIdx, card) {
+      if (!gameActive) return;
+
+      // Check if card is consecutive (Value numeric difference is 1)
+      // Note: King and Ace are NOT wrapped around in classic Golf, but you can configure
+      const diff = Math.abs(card.valNum - activeWaste.valNum);
+      if (diff === 1) {
+        // Collect card to waste pile
+        activeWaste = boardCols[colIdx].pop();
+        score += 10;
+        scoreEl.innerText = score;
+        renderBoard();
+      }
+    }
+
+    deckCard.addEventListener('click', () => {
+      if (!gameActive || deck.length === 0) return;
+      activeWaste = deck.pop();
+      renderBoard();
+
+      // Check loss: no cards left in deck and no possible moves (simple check)
+      if (deck.length === 0) {
+        let hasMoves = false;
+        for (let c = 0; c < 5; c++) {
+          const colCards = boardCols[c];
+          if (colCards.length > 0) {
+            const card = colCards[colCards.length - 1];
+            if (Math.abs(card.valNum - activeWaste.valNum) === 1) {
+              hasMoves = true;
+              break;
+            }
+          }
+        }
+        if (!hasMoves) {
+          // If table has cards left, game over loss
+          const tableCardsCount = boardCols.reduce((acc, col) => acc + col.length, 0);
+          if (tableCardsCount > 0) {
+            setTimeout(() => triggerGameOver(false), 1000);
+          }
+        }
+      }
+    });
+
+    function triggerGameOver(win) {
       gameActive = false;
       finalScoreEl.innerText = score;
+      if (win) {
+        endTitle.innerText = "🏆 VICTORY!";
+        endTitle.style.color = "#2e7d32";
+      } else {
+        endTitle.innerText = "GAME OVER";
+        endTitle.style.color = "#d81b60";
+      }
       gameOverScreen.style.display = 'flex';
-      if (score > bestScore) {
-        bestScore = score;
-        bestEl.innerText = bestScore;
-        localStorage.setItem('best_Neon_Solitaire_Club', bestScore);
-      }
-    }
-
-    function gameLoop() {
-      if (!gameActive) return;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
-        player.x -= player.speed;
-      }
-      if (keys['ArrowRight'] || keys['d'] || keys['D']) {
-        player.x += player.speed;
-      }
-      
-      if (player.x < 0) player.x = 0;
-      if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
-
-      ctx.fillStyle = player.color;
-      ctx.beginPath();
-      ctx.roundRect ? ctx.roundRect(player.x, player.y, player.width, player.height, 4) : ctx.rect(player.x, player.y, player.width, player.height);
-      ctx.fill();
-
-      spawnTimer++;
-      if (spawnTimer > Math.max(12 - score / 150, 4)) {
-        spawnItem();
-        spawnTimer = 0;
-      }
-
-      for (let i = items.length - 1; i >= 0; i--) {
-        const item = items[i];
-        item.y += item.speed;
-
-        const closestX = Math.max(player.x, Math.min(item.x, player.x + player.width));
-        const closestY = Math.max(player.y, Math.min(item.y, player.y + player.height));
-        const distanceX = item.x - closestX;
-        const distanceY = item.y - closestY;
-        const distanceSquared = (distanceX * distanceX) + (distanceY * distanceY);
-
-        if (distanceSquared < (item.radius * item.radius)) {
-          triggerGameOver();
-          return;
-        }
-
-        if (item.y > canvas.height + item.radius) {
-          items.splice(i, 1);
-          score += 10;
-          scoreEl.innerText = score;
-          continue;
-        }
-
-        ctx.fillStyle = item.color;
-        ctx.beginPath();
-        ctx.arc(item.x, item.y, item.radius, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      requestAnimationFrame(gameLoop);
     }
 
     startBtn.addEventListener('click', initGame);

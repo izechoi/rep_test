@@ -30,209 +30,333 @@
       font-weight: 700;
       color: #575e6a;
     }
-    canvas {
-      background: #ffffff;
-      border: 3px solid #2e7d32;
+    .board-container {
+      position: relative;
+      background: white;
+      padding: 15px;
       border-radius: 16px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+      border: 3px solid #2e7d32;
+    }
+    .board {
+      display: grid;
+      grid-template-columns: repeat(9, 32px);
+      grid-template-rows: repeat(9, 32px);
+      gap: 2px;
+      background: #bdbdbd;
+      padding: 2px;
+      border-radius: 8px;
+    }
+    .cell {
+      background: #e0e0e0;
+      border: 1px solid #eeeeee;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      user-select: none;
+    }
+    .cell.revealed {
+      background: #f5f5f5;
+      cursor: default;
+    }
+    .cell.mine {
+      background: #e57373 !important;
+    }
+    .cell:not(.revealed):hover {
+      background: #d5d5d5;
+    }
+    .cell.flag {
+      background: #ffecb3;
+    }
+    .mode-area {
+      display: flex;
+      justify-content: center;
+      margin-top: 15px;
+      gap: 10px;
+    }
+    .btn {
+      background: #e0e0e0;
+      border: 2px solid #bdbdbd;
+      color: #575e6a;
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .btn.active {
+      background: #2e7d32;
+      color: white;
+      border-color: #2e7d32;
+      box-shadow: 0 4px 10px rgba(46, 125, 50, 0.2);
     }
     .screen {
       position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
       background: rgba(255, 255, 255, 0.98);
       border: 1px solid rgba(0,0,0,0.06);
-      padding: 30px;
+      padding: 25px;
       border-radius: 16px;
       text-align: center;
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 15px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.12);
       width: 80%;
-      max-width: 320px;
-    }
-    button {
-      background: #2e7d32;
-      color: white;
-      border: none;
-      padding: 12px 24px;
-      border-radius: 10px;
-      font-size: 1rem;
-      font-weight: bold;
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-    button:hover {
-      transform: scale(1.04);
+      max-width: 260px;
+      z-index: 10;
     }
     .desc {
       color: #8d949e;
       font-size: 0.85rem;
       margin-top: 15px;
       font-weight: 500;
+      text-align: center;
+    }
+    @media (max-width: 480px) {
+      body {
+        padding: 10px;
+      }
+      h2 {
+        font-size: 1.3rem;
+      }
+      .board {
+        grid-template-columns: repeat(9, 28px);
+        grid-template-rows: repeat(9, 28px);
+      }
+      .cell {
+        font-size: 0.85rem;
+      }
+      .desc {
+        font-size: 0.75rem;
+      }
     }
   </style>
 </head>
 <body>
   <h2>Cyber Mine Finder</h2>
   <div class="info">
-    <div>Score: <span id="score">0</span></div>
-    <div>Best: <span id="best">0</span></div>
+    <div>Mines Left: <span id="minesLeft">10</span></div>
   </div>
-  <div style="position: relative; display: flex; align-items: center; justify-content: center;">
-    <canvas id="gameCanvas" width="440" height="330"></canvas>
-    
+
+  <div class="board-container">
+    <div class="board" id="board"></div>
+
+    <div class="mode-area">
+      <button class="btn active" id="modeDig">⛏️ Dig Mode</button>
+      <button class="btn" id="modeFlag">🚩 Flag Mode</button>
+    </div>
+
+    {/* Screen Overlays */}
     <div class="screen" id="startScreen">
-      <h3 style="margin:0; font-size: 1.15rem;">Dodge the Spheres</h3>
-      <p style="margin:0; font-size:0.85rem; color:#575e6a; line-height:1.5;">Move your paddle left and right using the mouse or WASD/Arrow keys.</p>
-      <button id="startBtn">START</button>
+      <h3 style="margin:0; font-size:1.1rem; color:#2e7d32;">Cyber Mine Finder</h3>
+      <p style="margin:0; font-size:0.8rem; color:#575e6a; line-height:1.5;">Find all 10 hidden mines! Toggle to Flag Mode to mark mines, or Dig Mode to clear tiles.</p>
+      <button class="btn active" id="startBtn">START</button>
     </div>
 
     <div class="screen" id="gameOverScreen" style="display: none;">
-      <h3 style="color: #d81b60; margin:0; font-size:1.4rem; font-weight:800;">GAME OVER</h3>
-      <p style="margin:0; font-weight:600;">Final Score: <span id="finalScore">0</span></p>
-      <button id="restartBtn">Play Again</button>
+      <h3 style="color: #d81b60; margin:0; font-size:1.3rem; font-weight:800;" id="endTitle">GAME OVER</h3>
+      <button class="btn active" id="restartBtn">Play Again</button>
     </div>
   </div>
-  <div class="desc">Dodge falling items! Survival score adds points.</div>
+
+  <div class="desc">Clear all tiles without stepping on any mines!</div>
 
   <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    const scoreEl = document.getElementById('score');
-    const bestEl = document.getElementById('best');
-    const finalScoreEl = document.getElementById('finalScore');
+    const boardEl = document.getElementById('board');
+    const minesLeftEl = document.getElementById('minesLeft');
+    
+    const modeDigBtn = document.getElementById('modeDig');
+    const modeFlagBtn = document.getElementById('modeFlag');
+    
     const startScreen = document.getElementById('startScreen');
     const gameOverScreen = document.getElementById('gameOverScreen');
     const startBtn = document.getElementById('startBtn');
     const restartBtn = document.getElementById('restartBtn');
+    const endTitle = document.getElementById('endTitle');
 
+    const SIZE = 9;
+    const MINE_COUNT = 10;
+    let grid = [];
+    let minePositions = [];
+    let mode = 'dig'; // 'dig' or 'flag'
     let gameActive = false;
-    let score = 0;
-    let bestScore = parseInt(localStorage.getItem('best_Cyber_Mine_Finder')) || 0;
-    bestEl.innerText = bestScore;
-
-    const player = {
-      x: canvas.width / 2 - 40,
-      y: canvas.height - 25,
-      width: 80,
-      height: 12,
-      speed: 8,
-      color: '#2e7d32'
-    };
-
-    let items = [];
-    let spawnTimer = 0;
-    let keys = {};
-
-    window.addEventListener('keydown', (e) => {
-      if([32, 37, 39, 38, 40].includes(e.keyCode)) e.preventDefault();
-      keys[e.key] = true;
-    });
-    window.addEventListener('keyup', (e) => {
-      keys[e.key] = false;
-    });
-    
-    canvas.addEventListener('mousemove', (e) => {
-      if (!gameActive) return;
-      const rect = canvas.getBoundingClientRect();
-      const root = document.documentElement;
-      const mouseX = e.clientX - rect.left - root.scrollLeft;
-      player.x = mouseX - player.width / 2;
-      
-      if (player.x < 0) player.x = 0;
-      if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
-    });
-
-    function spawnItem() {
-      const size = Math.random() * 12 + 8;
-      items.push({
-        x: Math.random() * (canvas.width - size * 2) + size,
-        y: -size,
-        radius: size,
-        speed: Math.random() * 3 + 2.5 + (score / 300),
-        color: ['#d81b60', '#e65100', '#0076ff', '#6200ea', '#2e7d32'][Math.floor(Math.random() * 5)]
-      });
-    }
+    let revealedCount = 0;
+    let flagsCount = 0;
 
     function initGame() {
-      items = [];
-      score = 0;
-      scoreEl.innerText = score;
-      player.x = canvas.width / 2 - 40;
+      revealedCount = 0;
+      flagsCount = 0;
+      minesLeftEl.innerText = MINE_COUNT;
       gameActive = true;
       startScreen.style.display = 'none';
       gameOverScreen.style.display = 'none';
-      requestAnimationFrame(gameLoop);
+      setMode('dig');
+      generateGrid();
+      renderBoard();
     }
 
-    function triggerGameOver() {
-      gameActive = false;
-      finalScoreEl.innerText = score;
-      gameOverScreen.style.display = 'flex';
-      if (score > bestScore) {
-        bestScore = score;
-        bestEl.innerText = bestScore;
-        localStorage.setItem('best_Cyber_Mine_Finder', bestScore);
+    function generateGrid() {
+      grid = [];
+      minePositions = [];
+      for (let r = 0; r < SIZE; r++) {
+        grid[r] = [];
+        for (let c = 0; c < SIZE; c++) {
+          grid[r][c] = {
+            mine: false,
+            revealed: false,
+            flagged: false,
+            neighborMines: 0
+          };
+        }
+      }
+
+      // Randomly spawn 10 mines
+      let spawned = 0;
+      while (spawned < MINE_COUNT) {
+        const r = Math.floor(Math.random() * SIZE);
+        const c = Math.floor(Math.random() * SIZE);
+        if (!grid[r][c].mine) {
+          grid[r][c].mine = true;
+          minePositions.push({ r, c });
+          spawned++;
+        }
+      }
+
+      // Calculate neighbors
+      for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+          if (grid[r][c].mine) continue;
+          let count = 0;
+          for (let dr = -1; dr <= 1; dr++) {
+            for (let dc = -1; dc <= 1; dc++) {
+              const nr = r + dr;
+              const nc = c + dc;
+              if (nr >= 0 && nr < SIZE && nc >= 0 && nc < SIZE && grid[nr][nc].mine) {
+                count++;
+              }
+            }
+          }
+          grid[r][c].neighborMines = count;
+        }
       }
     }
 
-    function gameLoop() {
+    function renderBoard() {
+      boardEl.innerHTML = '';
+      for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+          const cell = document.createElement('div');
+          cell.className = 'cell';
+          cell.dataset.row = r;
+          cell.dataset.col = c;
+
+          const data = grid[r][c];
+          if (data.revealed) {
+            cell.classList.add('revealed');
+            if (data.mine) {
+              cell.classList.add('mine');
+              cell.innerText = '💣';
+            } else if (data.neighborMines > 0) {
+              cell.innerText = data.neighborMines;
+              cell.style.color = ['#1976d2', '#388e3c', '#d32f2f', '#7b1fa2', '#ff5722', '#00796b', '#000000', '#555555'][data.neighborMines - 1];
+            }
+          } else if (data.flagged) {
+            cell.classList.add('flag');
+            cell.innerText = '🚩';
+          }
+
+          cell.addEventListener('click', () => cellClick(r, c));
+          boardEl.appendChild(cell);
+        }
+      }
+    }
+
+    function cellClick(r, c) {
       if (!gameActive) return;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const data = grid[r][c];
 
-      if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
-        player.x -= player.speed;
-      }
-      if (keys['ArrowRight'] || keys['d'] || keys['D']) {
-        player.x += player.speed;
-      }
-      
-      if (player.x < 0) player.x = 0;
-      if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
-
-      ctx.fillStyle = player.color;
-      ctx.beginPath();
-      ctx.roundRect ? ctx.roundRect(player.x, player.y, player.width, player.height, 4) : ctx.rect(player.x, player.y, player.width, player.height);
-      ctx.fill();
-
-      spawnTimer++;
-      if (spawnTimer > Math.max(12 - score / 150, 4)) {
-        spawnItem();
-        spawnTimer = 0;
-      }
-
-      for (let i = items.length - 1; i >= 0; i--) {
-        const item = items[i];
-        item.y += item.speed;
-
-        const closestX = Math.max(player.x, Math.min(item.x, player.x + player.width));
-        const closestY = Math.max(player.y, Math.min(item.y, player.y + player.height));
-        const distanceX = item.x - closestX;
-        const distanceY = item.y - closestY;
-        const distanceSquared = (distanceX * distanceX) + (distanceY * distanceY);
-
-        if (distanceSquared < (item.radius * item.radius)) {
-          triggerGameOver();
+      if (mode === 'flag') {
+        if (data.revealed) return;
+        data.flagged = !data.flagged;
+        flagsCount += data.flagged ? 1 : -1;
+        minesLeftEl.innerText = MINE_COUNT - flagsCount;
+      } else {
+        if (data.flagged || data.revealed) return;
+        
+        data.revealed = true;
+        revealedCount++;
+        
+        if (data.mine) {
+          triggerGameOver(false);
           return;
         }
-
-        if (item.y > canvas.height + item.radius) {
-          items.splice(i, 1);
-          score += 10;
-          scoreEl.innerText = score;
-          continue;
+        
+        if (data.neighborMines === 0) {
+          revealNeighbors(r, c);
         }
-
-        ctx.fillStyle = item.color;
-        ctx.beginPath();
-        ctx.arc(item.x, item.y, item.radius, 0, Math.PI * 2);
-        ctx.fill();
+        
+        if (revealedCount === SIZE * SIZE - MINE_COUNT) {
+          triggerGameOver(true);
+          return;
+        }
       }
-
-      requestAnimationFrame(gameLoop);
+      renderBoard();
     }
 
+    function revealNeighbors(r, c) {
+      for (let dr = -1; dr <= 1; dr++) {
+        for (let dc = -1; dc <= 1; dc++) {
+          const nr = r + dr;
+          const nc = c + dc;
+          if (nr >= 0 && nr < SIZE && nc >= 0 && nc < SIZE) {
+            const data = grid[nr][nc];
+            if (!data.revealed && !data.mine && !data.flagged) {
+              data.revealed = true;
+              revealedCount++;
+              if (data.neighborMines === 0) {
+                revealNeighbors(nr, nc);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    function revealAllMines() {
+      minePositions.forEach(pos => {
+        grid[pos.r][pos.c].revealed = true;
+      });
+      renderBoard();
+    }
+
+    function triggerGameOver(win) {
+      gameActive = false;
+      if (win) {
+        endTitle.innerText = "🏆 VICTORY!";
+        endTitle.style.color = "#2e7d32";
+      } else {
+        endTitle.innerText = "💣 BOOM! GAME OVER";
+        endTitle.style.color = "#d81b60";
+        revealAllMines();
+      }
+      gameOverScreen.style.display = 'flex';
+    }
+
+    function setMode(newMode) {
+      mode = newMode;
+      modeDigBtn.classList.toggle('active', mode === 'dig');
+      modeFlagBtn.classList.toggle('active', mode === 'flag');
+    }
+
+    modeDigBtn.addEventListener('click', () => setMode('dig'));
+    modeFlagBtn.addEventListener('click', () => setMode('flag'));
     startBtn.addEventListener('click', initGame);
     restartBtn.addEventListener('click', initGame);
   </script>

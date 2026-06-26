@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Word Search Neon</title>
+  <title>Cyber Word Puzzle</title>
   <style>
     body {
       margin: 0;
@@ -19,219 +19,344 @@
     }
     h2 {
       margin: 0 0 10px;
-      color: #e65100;
+      color: #0076ff;
       font-weight: 800;
     }
     .info {
       font-size: 1.1rem;
-      margin-bottom: 15px;
-      display: flex;
-      gap: 30px;
+      margin-bottom: 12px;
       font-weight: 700;
       color: #575e6a;
+      text-align: center;
     }
-    canvas {
-      background: #ffffff;
-      border: 3px solid #e65100;
+    .board-container {
+      position: relative;
+      background: white;
+      padding: 15px;
       border-radius: 16px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+      border: 3px solid #0076ff;
+      width: 90%;
+      max-width: 320px;
+    }
+    .guess-row {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+    .tile {
+      width: 44px;
+      height: 44px;
+      border: 2px solid #ccc;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+    .tile.correct {
+      background: #2e7d32;
+      border-color: #2e7d32;
+      color: white;
+    }
+    .tile.present {
+      background: #ffd54f;
+      border-color: #ffd54f;
+      color: #1e2229;
+    }
+    .tile.absent {
+      background: #78909c;
+      border-color: #78909c;
+      color: white;
+    }
+    .keyboard {
+      margin-top: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      align-items: center;
+    }
+    .keyboard-row {
+      display: flex;
+      gap: 4px;
+    }
+    .key-btn {
+      background: #e0e0e0;
+      border: none;
+      color: #1e2229;
+      padding: 10px 6px;
+      min-width: 24px;
+      height: 38px;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      font-weight: bold;
+      cursor: pointer;
+      user-select: none;
+      text-align: center;
+    }
+    .key-btn:active {
+      background: #bdbdbd;
+    }
+    .key-btn.action {
+      background: #b0bec5;
+      min-width: 42px;
     }
     .screen {
       position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
       background: rgba(255, 255, 255, 0.98);
       border: 1px solid rgba(0,0,0,0.06);
-      padding: 30px;
+      padding: 25px;
       border-radius: 16px;
       text-align: center;
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 15px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.12);
       width: 80%;
-      max-width: 320px;
+      max-width: 260px;
+      z-index: 10;
+      color: #1e2229;
     }
-    button {
-      background: #e65100;
+    button.start-btn {
+      background: #0076ff;
       color: white;
       border: none;
-      padding: 12px 24px;
-      border-radius: 10px;
-      font-size: 1rem;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 0.95rem;
       font-weight: bold;
       cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-    button:hover {
-      transform: scale(1.04);
     }
     .desc {
       color: #8d949e;
       font-size: 0.85rem;
       margin-top: 15px;
       font-weight: 500;
+      text-align: center;
+    }
+    @media (max-width: 480px) {
+      body {
+        padding: 5px;
+      }
+      h2 {
+        font-size: 1.3rem;
+      }
+      .tile {
+        width: 38px;
+        height: 38px;
+        font-size: 1.25rem;
+      }
+      .key-btn {
+        min-width: 18px;
+        height: 34px;
+        font-size: 0.75rem;
+        padding: 8px 4px;
+      }
+      .desc {
+        font-size: 0.75rem;
+      }
     }
   </style>
 </head>
 <body>
-  <h2>Word Search Neon</h2>
+  <h2>Cyber Word Puzzle</h2>
   <div class="info">
-    <div>Score: <span id="score">0</span></div>
-    <div>Best: <span id="best">0</span></div>
+    <div>Solve 5-Letter Word (6 Tries)</div>
   </div>
-  <div style="position: relative; display: flex; align-items: center; justify-content: center;">
-    <canvas id="gameCanvas" width="440" height="330"></canvas>
-    
+
+  <div class="board-container">
+    <div id="board"></div>
+
+    <div class="keyboard" id="keyboard"></div>
+
+    {/* Screen Overlays */}
     <div class="screen" id="startScreen">
-      <h3 style="margin:0; font-size: 1.15rem;">Dodge the Spheres</h3>
-      <p style="margin:0; font-size:0.85rem; color:#575e6a; line-height:1.5;">Move your paddle left and right using the mouse or WASD/Arrow keys.</p>
-      <button id="startBtn">START</button>
+      <h3 style="margin:0; font-size:1.1rem; color:#0076ff;">Wordle Puzzle</h3>
+      <p style="margin:0; font-size:0.8rem; color:#575e6a; line-height:1.5;">Guess the hidden 5-letter word! GREEN = right letter & right spot, YELLOW = right letter but wrong spot, GRAY = wrong letter.</p>
+      <button class="start-btn" id="startBtn">START</button>
     </div>
 
     <div class="screen" id="gameOverScreen" style="display: none;">
-      <h3 style="color: #d81b60; margin:0; font-size:1.4rem; font-weight:800;">GAME OVER</h3>
-      <p style="margin:0; font-weight:600;">Final Score: <span id="finalScore">0</span></p>
-      <button id="restartBtn">Play Again</button>
+      <h3 style="color: #2e7d32; margin:0; font-size:1.3rem; font-weight:800;" id="endTitle">SOLVED!</h3>
+      <p style="margin:0; font-size:0.85rem; color:#575e6a;">The word was: <strong style="color:#0076ff; font-size:1.1rem;" id="targetWordText">GAME</strong></p>
+      <button class="start-btn" id="restartBtn">Play Again</button>
     </div>
   </div>
-  <div class="desc">Dodge falling items! Survival score adds points.</div>
+
+  <div class="desc">Tap keyboard buttons to type. Submit guess to see hints!</div>
 
   <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    const scoreEl = document.getElementById('score');
-    const bestEl = document.getElementById('best');
-    const finalScoreEl = document.getElementById('finalScore');
+    const boardEl = document.getElementById('board');
+    const keyboardEl = document.getElementById('keyboard');
     const startScreen = document.getElementById('startScreen');
     const gameOverScreen = document.getElementById('gameOverScreen');
     const startBtn = document.getElementById('startBtn');
     const restartBtn = document.getElementById('restartBtn');
+    const endTitle = document.getElementById('endTitle');
+    const targetWordText = document.getElementById('targetWordText');
 
+    const WORDS = ['REACT', 'VITES', 'HTMLS', 'CODED', 'SNAKE', 'CHESS', 'BOARD', 'CLONE', 'PIXEL', 'ARENA'];
+    let targetWord = 'REACT';
+    let guesses = [];
+    let currentGuess = '';
     let gameActive = false;
-    let score = 0;
-    let bestScore = parseInt(localStorage.getItem('best_Word_Search_Neon')) || 0;
-    bestEl.innerText = bestScore;
 
-    const player = {
-      x: canvas.width / 2 - 40,
-      y: canvas.height - 25,
-      width: 80,
-      height: 12,
-      speed: 8,
-      color: '#e65100'
-    };
+    const ROW_COUNT = 6;
+    const WORD_LENGTH = 5;
 
-    let items = [];
-    let spawnTimer = 0;
-    let keys = {};
-
-    window.addEventListener('keydown', (e) => {
-      if([32, 37, 39, 38, 40].includes(e.keyCode)) e.preventDefault();
-      keys[e.key] = true;
-    });
-    window.addEventListener('keyup', (e) => {
-      keys[e.key] = false;
-    });
-    
-    canvas.addEventListener('mousemove', (e) => {
-      if (!gameActive) return;
-      const rect = canvas.getBoundingClientRect();
-      const root = document.documentElement;
-      const mouseX = e.clientX - rect.left - root.scrollLeft;
-      player.x = mouseX - player.width / 2;
+    function initGame() {
+      // Pick random word
+      targetWord = WORDS[Math.floor(Math.random() * WORDS.length)].toUpperCase();
+      guesses = [];
+      currentGuess = '';
+      gameActive = true;
       
-      if (player.x < 0) player.x = 0;
-      if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
-    });
+      startScreen.style.display = 'none';
+      gameOverScreen.style.display = 'none';
 
-    function spawnItem() {
-      const size = Math.random() * 12 + 8;
-      items.push({
-        x: Math.random() * (canvas.width - size * 2) + size,
-        y: -size,
-        radius: size,
-        speed: Math.random() * 3 + 2.5 + (score / 300),
-        color: ['#d81b60', '#e65100', '#0076ff', '#6200ea', '#2e7d32'][Math.floor(Math.random() * 5)]
+      setupBoard();
+      setupKeyboard();
+    }
+
+    function setupBoard() {
+      boardEl.innerHTML = '';
+      for (let r = 0; r < ROW_COUNT; r++) {
+        const row = document.createElement('div');
+        row.className = 'guess-row';
+        for (let c = 0; c < WORD_LENGTH; c++) {
+          const tile = document.createElement('div');
+          tile.className = 'tile';
+          tile.id = `tile-${r}-${c}`;
+          row.appendChild(tile);
+        }
+        boardEl.appendChild(row);
+      }
+      updateBoard();
+    }
+
+    function updateBoard() {
+      // Clear all editable tiles first
+      for (let r = 0; r < ROW_COUNT; r++) {
+        for (let c = 0; c < WORD_LENGTH; c++) {
+          const tile = document.getElementById(`tile-${r}-${c}`);
+          tile.innerText = '';
+          tile.className = 'tile'; // reset class
+          
+          if (r < guesses.length) {
+            const guess = guesses[r];
+            const letter = guess[c];
+            tile.innerText = letter;
+
+            // Highlight hints
+            if (letter === targetWord[c]) {
+              tile.classList.add('correct');
+            } else if (targetWord.includes(letter)) {
+              tile.classList.add('present');
+            } else {
+              tile.classList.add('absent');
+            }
+          } else if (r === guesses.length) {
+            if (c < currentGuess.length) {
+              tile.innerText = currentGuess[c];
+            }
+          }
+        }
+      }
+    }
+
+    const KEYS = [
+      ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
+      ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
+      ['Enter', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', 'Del']
+    ];
+
+    function setupKeyboard() {
+      keyboardEl.innerHTML = '';
+      KEYS.forEach(rowKeys => {
+        const row = document.createElement('div');
+        row.className = 'keyboard-row';
+        rowKeys.forEach(k => {
+          const btn = document.createElement('button');
+          btn.className = 'key-btn';
+          btn.innerText = k;
+
+          if (k === 'Enter' || k === 'Del') {
+            btn.classList.add('action');
+          }
+
+          btn.addEventListener('click', () => keyPress(k));
+          row.appendChild(btn);
+        });
+        keyboardEl.appendChild(row);
       });
     }
 
-    function initGame() {
-      items = [];
-      score = 0;
-      scoreEl.innerText = score;
-      player.x = canvas.width / 2 - 40;
-      gameActive = true;
-      startScreen.style.display = 'none';
-      gameOverScreen.style.display = 'none';
-      requestAnimationFrame(gameLoop);
-    }
-
-    function triggerGameOver() {
-      gameActive = false;
-      finalScoreEl.innerText = score;
-      gameOverScreen.style.display = 'flex';
-      if (score > bestScore) {
-        bestScore = score;
-        bestEl.innerText = bestScore;
-        localStorage.setItem('best_Word_Search_Neon', bestScore);
-      }
-    }
-
-    function gameLoop() {
+    function keyPress(key) {
       if (!gameActive) return;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
-        player.x -= player.speed;
+      if (key === 'Del') {
+        currentGuess = currentGuess.slice(0, -1);
+      } else if (key === 'Enter') {
+        if (currentGuess.length === WORD_LENGTH) {
+          submitGuess();
+        }
+      } else {
+        if (currentGuess.length < WORD_LENGTH) {
+          currentGuess += key;
+        }
       }
-      if (keys['ArrowRight'] || keys['d'] || keys['D']) {
-        player.x += player.speed;
+      updateBoard();
+    }
+
+    function submitGuess() {
+      guesses.push(currentGuess);
+      
+      if (currentGuess === targetWord) {
+        // Solved
+        triggerGameOver(true);
+      } else if (guesses.length === ROW_COUNT) {
+        // Ran out of guesses
+        triggerGameOver(false);
       }
       
-      if (player.x < 0) player.x = 0;
-      if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
-
-      ctx.fillStyle = player.color;
-      ctx.beginPath();
-      ctx.roundRect ? ctx.roundRect(player.x, player.y, player.width, player.height, 4) : ctx.rect(player.x, player.y, player.width, player.height);
-      ctx.fill();
-
-      spawnTimer++;
-      if (spawnTimer > Math.max(12 - score / 150, 4)) {
-        spawnItem();
-        spawnTimer = 0;
-      }
-
-      for (let i = items.length - 1; i >= 0; i--) {
-        const item = items[i];
-        item.y += item.speed;
-
-        const closestX = Math.max(player.x, Math.min(item.x, player.x + player.width));
-        const closestY = Math.max(player.y, Math.min(item.y, player.y + player.height));
-        const distanceX = item.x - closestX;
-        const distanceY = item.y - closestY;
-        const distanceSquared = (distanceX * distanceX) + (distanceY * distanceY);
-
-        if (distanceSquared < (item.radius * item.radius)) {
-          triggerGameOver();
-          return;
-        }
-
-        if (item.y > canvas.height + item.radius) {
-          items.splice(i, 1);
-          score += 10;
-          scoreEl.innerText = score;
-          continue;
-        }
-
-        ctx.fillStyle = item.color;
-        ctx.beginPath();
-        ctx.arc(item.x, item.y, item.radius, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      requestAnimationFrame(gameLoop);
+      currentGuess = '';
     }
+
+    function triggerGameOver(win) {
+      gameActive = false;
+      targetWordText.innerText = targetWord;
+      if (win) {
+        endTitle.innerText = "🏆 SOLVED!";
+        endTitle.style.color = "#2e7d32";
+      } else {
+        endTitle.innerText = "GAME OVER";
+        endTitle.style.color = "#d81b60";
+      }
+      gameOverScreen.style.display = 'flex';
+    }
+
+    // Keyboard hooks
+    window.addEventListener('keydown', (e) => {
+      if (!gameActive) return;
+      
+      if (e.key === 'Backspace') {
+        keyPress('Del');
+      } else if (e.key === 'Enter') {
+        keyPress('Enter');
+      } else {
+        const key = e.key.toUpperCase();
+        if (key.length === 1 && key >= 'A' && key <= 'Z') {
+          keyPress(key);
+        }
+      }
+    });
 
     startBtn.addEventListener('click', initGame);
     restartBtn.addEventListener('click', initGame);

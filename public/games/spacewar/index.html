@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Space War Dodge</title>
+  <title>Cyber Space War</title>
   <style>
     body {
       margin: 0;
@@ -19,8 +19,9 @@
     }
     h2 {
       margin: 0 0 10px;
-      color: #d81b60;
+      color: #00e5ff;
       font-weight: 800;
+      text-shadow: 0 0 8px rgba(0, 229, 255, 0.2);
     }
     .info {
       font-size: 1.1rem;
@@ -30,71 +31,120 @@
       font-weight: 700;
       color: #575e6a;
     }
+    .game-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
     canvas {
-      background: #ffffff;
-      border: 3px solid #d81b60;
+      background: #000411;
+      border: 3px solid #00e5ff;
       border-radius: 16px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    }
+    .controls {
+      margin-top: 12px;
+      display: flex;
+      gap: 10px;
+    }
+    .btn {
+      background: #00e5ff;
+      color: #000411;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: bold;
+      cursor: pointer;
+      user-select: none;
+    }
+    .btn:active {
+      transform: scale(0.95);
+    }
+    .btn.shoot {
+      background: #ff1744;
+      color: white;
+      padding: 10px 24px;
     }
     .screen {
       position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
       background: rgba(255, 255, 255, 0.98);
       border: 1px solid rgba(0,0,0,0.06);
-      padding: 30px;
+      padding: 25px;
       border-radius: 16px;
       text-align: center;
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 15px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
       width: 80%;
-      max-width: 320px;
-    }
-    button {
-      background: #d81b60;
-      color: white;
-      border: none;
-      padding: 12px 24px;
-      border-radius: 10px;
-      font-size: 1rem;
-      font-weight: bold;
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-    button:hover {
-      transform: scale(1.04);
+      max-width: 280px;
+      z-index: 10;
     }
     .desc {
       color: #8d949e;
       font-size: 0.85rem;
       margin-top: 15px;
       font-weight: 500;
+      text-align: center;
+    }
+    @media (max-width: 480px) {
+      body {
+        padding: 5px;
+      }
+      h2 {
+        font-size: 1.25rem;
+      }
+      canvas {
+        max-width: 85vw;
+        height: auto;
+      }
+      .btn {
+        padding: 8px 12px;
+        font-size: 0.8rem;
+      }
+      .desc {
+        font-size: 0.75rem;
+      }
     }
   </style>
 </head>
 <body>
-  <h2>Space War Dodge</h2>
+  <h2>Cyber Space War</h2>
   <div class="info">
     <div>Score: <span id="score">0</span></div>
     <div>Best: <span id="best">0</span></div>
   </div>
-  <div style="position: relative; display: flex; align-items: center; justify-content: center;">
-    <canvas id="gameCanvas" width="440" height="330"></canvas>
-    
+
+  <div class="game-area">
+    <canvas id="gameCanvas" width="360" height="380"></canvas>
+
+    {/* Screen Overlays */}
     <div class="screen" id="startScreen">
-      <h3 style="margin:0; font-size: 1.15rem;">Dodge the Spheres</h3>
-      <p style="margin:0; font-size:0.85rem; color:#575e6a; line-height:1.5;">Move your paddle left and right using the mouse or WASD/Arrow keys.</p>
-      <button id="startBtn">START</button>
+      <h3 style="margin:0; font-size:1.1rem; color:#00e5ff; text-shadow:none;">Space War</h3>
+      <p style="margin:0; font-size:0.8rem; color:#575e6a; line-height:1.5;">Defeat the invading aliens! Use Left/Right keys and Space to shoot, or screen buttons below.</p>
+      <button class="btn" id="startBtn">START</button>
     </div>
 
     <div class="screen" id="gameOverScreen" style="display: none;">
-      <h3 style="color: #d81b60; margin:0; font-size:1.4rem; font-weight:800;">GAME OVER</h3>
+      <h3 style="color: #d81b60; margin:0; font-size:1.3rem; font-weight:800;">GAME OVER</h3>
       <p style="margin:0; font-weight:600;">Final Score: <span id="finalScore">0</span></p>
-      <button id="restartBtn">Play Again</button>
+      <button class="btn" id="restartBtn">Play Again</button>
     </div>
   </div>
-  <div class="desc">Dodge falling items! Survival score adds points.</div>
+
+  <div class="controls" id="controlBar">
+    <button class="btn" id="btnLeft">◀ Left</button>
+    <button class="btn shoot" id="btnShoot">FIRE 🚀</button>
+    <button class="btn" id="btnRight">Right ▶</button>
+  </div>
+
+  <div class="desc">Destroy aliens before they touch the ground! Watch out for their speed.</div>
 
   <script>
     const canvas = document.getElementById('gameCanvas');
@@ -102,6 +152,7 @@
     const scoreEl = document.getElementById('score');
     const bestEl = document.getElementById('best');
     const finalScoreEl = document.getElementById('finalScore');
+    
     const startScreen = document.getElementById('startScreen');
     const gameOverScreen = document.getElementById('gameOverScreen');
     const startBtn = document.getElementById('startBtn');
@@ -109,61 +160,82 @@
 
     let gameActive = false;
     let score = 0;
-    let bestScore = parseInt(localStorage.getItem('best_Space_War_Dodge')) || 0;
+    let bestScore = parseInt(localStorage.getItem('best_space_war')) || 0;
     bestEl.innerText = bestScore;
 
-    const player = {
-      x: canvas.width / 2 - 40,
-      y: canvas.height - 25,
-      width: 80,
-      height: 12,
-      speed: 8,
-      color: '#d81b60'
+    // Ship physics
+    const ship = {
+      x: canvas.width / 2 - 15,
+      y: canvas.height - 35,
+      width: 30,
+      height: 15,
+      speed: 6,
+      color: '#00e5ff'
     };
 
-    let items = [];
-    let spawnTimer = 0;
+    let bullets = [];
+    let aliens = [];
+    let alienTimer = 0;
     let keys = {};
 
-    window.addEventListener('keydown', (e) => {
-      if([32, 37, 39, 38, 40].includes(e.keyCode)) e.preventDefault();
-      keys[e.key] = true;
-    });
-    window.addEventListener('keyup', (e) => {
-      keys[e.key] = false;
-    });
-    
-    canvas.addEventListener('mousemove', (e) => {
-      if (!gameActive) return;
-      const rect = canvas.getBoundingClientRect();
-      const root = document.documentElement;
-      const mouseX = e.clientX - rect.left - root.scrollLeft;
-      player.x = mouseX - player.width / 2;
-      
-      if (player.x < 0) player.x = 0;
-      if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
-    });
-
-    function spawnItem() {
-      const size = Math.random() * 12 + 8;
-      items.push({
-        x: Math.random() * (canvas.width - size * 2) + size,
-        y: -size,
-        radius: size,
-        speed: Math.random() * 3 + 2.5 + (score / 300),
-        color: ['#d81b60', '#e65100', '#0076ff', '#6200ea', '#2e7d32'][Math.floor(Math.random() * 5)]
-      });
-    }
-
     function initGame() {
-      items = [];
       score = 0;
       scoreEl.innerText = score;
-      player.x = canvas.width / 2 - 40;
+      ship.x = canvas.width / 2 - 15;
+      bullets = [];
+      aliens = [];
+      alienTimer = 0;
       gameActive = true;
       startScreen.style.display = 'none';
       gameOverScreen.style.display = 'none';
       requestAnimationFrame(gameLoop);
+    }
+
+    function shoot() {
+      if (!gameActive) return;
+      bullets.push({
+        x: ship.x + ship.width / 2,
+        y: ship.y,
+        radius: 3,
+        speed: 7,
+        color: '#ffeb3b'
+      });
+    }
+
+    // Input handlers
+    window.addEventListener('keydown', (e) => {
+      if ([32, 37, 39, 38, 40].includes(e.keyCode)) e.preventDefault();
+      keys[e.key] = true;
+      if (e.key === ' ' || e.code === 'Space') {
+        shoot();
+      }
+    });
+    window.addEventListener('keyup', (e) => {
+      keys[e.key] = false;
+    });
+
+    document.getElementById('btnLeft').addEventListener('mousedown', () => { keys['ArrowLeft'] = true; });
+    document.getElementById('btnLeft').addEventListener('mouseup', () => { keys['ArrowLeft'] = false; });
+    document.getElementById('btnLeft').addEventListener('touchstart', (e) => { e.preventDefault(); keys['ArrowLeft'] = true; });
+    document.getElementById('btnLeft').addEventListener('touchend', () => { keys['ArrowLeft'] = false; });
+
+    document.getElementById('btnRight').addEventListener('mousedown', () => { keys['ArrowRight'] = true; });
+    document.getElementById('btnRight').addEventListener('mouseup', () => { keys['ArrowRight'] = false; });
+    document.getElementById('btnRight').addEventListener('touchstart', (e) => { e.preventDefault(); keys['ArrowRight'] = true; });
+    document.getElementById('btnRight').addEventListener('touchend', () => { keys['ArrowRight'] = false; });
+
+    document.getElementById('btnShoot').addEventListener('click', shoot);
+
+    function spawnAlien() {
+      const size = 18;
+      aliens.push({
+        x: Math.random() * (canvas.width - size * 2) + size,
+        y: -size,
+        width: size,
+        height: size,
+        speed: 1.2 + (score / 500),
+        color: '#00e676'
+      });
     }
 
     function triggerGameOver() {
@@ -173,7 +245,7 @@
       if (score > bestScore) {
         bestScore = score;
         bestEl.innerText = bestScore;
-        localStorage.setItem('best_Space_War_Dodge', bestScore);
+        localStorage.setItem('best_space_war', bestScore);
       }
     }
 
@@ -181,53 +253,84 @@
       if (!gameActive) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+      // Move ship
       if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
-        player.x -= player.speed;
+        ship.x -= ship.speed;
       }
       if (keys['ArrowRight'] || keys['d'] || keys['D']) {
-        player.x += player.speed;
+        ship.x += ship.speed;
       }
-      
-      if (player.x < 0) player.x = 0;
-      if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
+      if (ship.x < 0) ship.x = 0;
+      if (ship.x > canvas.width - ship.width) ship.x = canvas.width - ship.width;
 
-      ctx.fillStyle = player.color;
+      // Draw Ship (Cyber Spacecraft)
+      ctx.fillStyle = ship.color;
       ctx.beginPath();
-      ctx.roundRect ? ctx.roundRect(player.x, player.y, player.width, player.height, 4) : ctx.rect(player.x, player.y, player.width, player.height);
+      ctx.moveTo(ship.x + ship.width / 2, ship.y);
+      ctx.lineTo(ship.x, ship.y + ship.height);
+      ctx.lineTo(ship.x + ship.width, ship.y + ship.height);
+      ctx.closePath();
       ctx.fill();
 
-      spawnTimer++;
-      if (spawnTimer > Math.max(12 - score / 150, 4)) {
-        spawnItem();
-        spawnTimer = 0;
+      // Spawn Aliens
+      alienTimer++;
+      const spawnInterval = Math.max(50 - Math.floor(score / 200), 20);
+      if (alienTimer > spawnInterval) {
+        spawnAlien();
+        alienTimer = 0;
       }
 
-      for (let i = items.length - 1; i >= 0; i--) {
-        const item = items[i];
-        item.y += item.speed;
+      // Move & Draw bullets
+      for (let i = bullets.length - 1; i >= 0; i--) {
+        const b = bullets[i];
+        b.y -= b.speed;
+        
+        ctx.fillStyle = b.color;
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+        ctx.fill();
 
-        const closestX = Math.max(player.x, Math.min(item.x, player.x + player.width));
-        const closestY = Math.max(player.y, Math.min(item.y, player.y + player.height));
-        const distanceX = item.x - closestX;
-        const distanceY = item.y - closestY;
-        const distanceSquared = (distanceX * distanceX) + (distanceY * distanceY);
+        // Clean out of bounds
+        if (b.y < 0) {
+          bullets.splice(i, 1);
+        }
+      }
 
-        if (distanceSquared < (item.radius * item.radius)) {
+      // Move & Draw Aliens
+      for (let i = aliens.length - 1; i >= 0; i--) {
+        const a = aliens[i];
+        a.y += a.speed;
+
+        // Draw alien ship
+        ctx.fillStyle = a.color;
+        ctx.fillRect(a.x, a.y, a.width, a.height);
+        // Little eyes
+        ctx.fillStyle = '#000';
+        ctx.fillRect(a.x + 3, a.y + 4, 3, 3);
+        ctx.fillRect(a.x + a.width - 6, a.y + 4, 3, 3);
+
+        // Ground touch gameOver
+        if (a.y + a.height > ship.y + 5) {
           triggerGameOver();
           return;
         }
 
-        if (item.y > canvas.height + item.radius) {
-          items.splice(i, 1);
-          score += 10;
-          scoreEl.innerText = score;
-          continue;
+        // Collision bullet vs alien
+        for (let j = bullets.length - 1; j >= 0; j--) {
+          const b = bullets[j];
+          if (
+            b.x > a.x &&
+            b.x < a.x + a.width &&
+            b.y > a.y &&
+            b.y < a.y + a.height
+          ) {
+            aliens.splice(i, 1);
+            bullets.splice(j, 1);
+            score += 10;
+            scoreEl.innerText = score;
+            break;
+          }
         }
-
-        ctx.fillStyle = item.color;
-        ctx.beginPath();
-        ctx.arc(item.x, item.y, item.radius, 0, Math.PI * 2);
-        ctx.fill();
       }
 
       requestAnimationFrame(gameLoop);

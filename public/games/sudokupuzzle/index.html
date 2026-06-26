@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sudoku Neon Grid</title>
+  <title>Cyber Sudoku Lite</title>
   <style>
     body {
       margin: 0;
@@ -19,7 +19,7 @@
     }
     h2 {
       margin: 0 0 10px;
-      color: #2e7d32;
+      color: #6a1b9a;
       font-weight: 800;
     }
     .info {
@@ -30,207 +30,296 @@
       font-weight: 700;
       color: #575e6a;
     }
-    canvas {
-      background: #ffffff;
-      border: 3px solid #2e7d32;
+    .board-container {
+      position: relative;
+      background: white;
+      padding: 15px;
       border-radius: 16px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+      border: 3px solid #6a1b9a;
+      width: 90%;
+      max-width: 320px;
+    }
+    .board {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      grid-template-rows: repeat(4, 1fr);
+      gap: 4px;
+      background: #bdbdbd;
+      padding: 4px;
+      border-radius: 8px;
+    }
+    .cell {
+      background: #ffffff;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+      font-weight: 800;
+      cursor: pointer;
+      user-select: none;
+      border-radius: 4px;
+      color: #37474f;
+    }
+    .cell.selected {
+      background: #e1bee7;
+      box-shadow: inset 0 0 0 3px #9c27b0;
+    }
+    .cell.given {
+      background: #eceff1;
+      color: #78909c;
+      cursor: default;
+    }
+    .cell.error {
+      color: #d32f2f !important;
+    }
+    /* 2x2 Subgrid border helpers */
+    .cell:nth-child(even) {
+      margin-right: 2px;
+    }
+    .cell:nth-child(n+9):nth-child(-n+12) {
+      margin-top: 2px;
+    }
+    .num-pad {
+      margin-top: 15px;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+    }
+    .btn {
+      background: #6a1b9a;
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      text-align: center;
+    }
+    .btn:active {
+      transform: scale(0.95);
+    }
+    .btn.action {
+      background: #9e9e9e;
+      font-size: 0.85rem;
     }
     .screen {
       position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
       background: rgba(255, 255, 255, 0.98);
       border: 1px solid rgba(0,0,0,0.06);
-      padding: 30px;
+      padding: 25px;
       border-radius: 16px;
       text-align: center;
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 15px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.12);
       width: 80%;
-      max-width: 320px;
-    }
-    button {
-      background: #2e7d32;
-      color: white;
-      border: none;
-      padding: 12px 24px;
-      border-radius: 10px;
-      font-size: 1rem;
-      font-weight: bold;
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-    button:hover {
-      transform: scale(1.04);
+      max-width: 250px;
+      z-index: 10;
     }
     .desc {
       color: #8d949e;
       font-size: 0.85rem;
       margin-top: 15px;
       font-weight: 500;
+      text-align: center;
+    }
+    @media (max-width: 480px) {
+      body {
+        padding: 10px;
+      }
+      h2 {
+        font-size: 1.3rem;
+      }
+      .cell {
+        height: 48px;
+        font-size: 1.3rem;
+      }
+      .desc {
+        font-size: 0.75rem;
+      }
     }
   </style>
 </head>
 <body>
-  <h2>Sudoku Neon Grid</h2>
+  <h2>Cyber Sudoku Lite</h2>
   <div class="info">
-    <div>Score: <span id="score">0</span></div>
-    <div>Best: <span id="best">0</span></div>
+    <div style="color: #6a1b9a;">4x4 Mini Sudoku</div>
   </div>
-  <div style="position: relative; display: flex; align-items: center; justify-content: center;">
-    <canvas id="gameCanvas" width="440" height="330"></canvas>
-    
+
+  <div class="board-container">
+    <div class="board" id="board"></div>
+
+    <div class="num-pad">
+      <button class="btn num-btn">1</button>
+      <button class="btn num-btn">2</button>
+      <button class="btn num-btn">3</button>
+      <button class="btn num-btn">4</button>
+      <button class="btn action" id="btnErase">X</button>
+    </div>
+
+    {/* Screen Overlays */}
     <div class="screen" id="startScreen">
-      <h3 style="margin:0; font-size: 1.15rem;">Dodge the Spheres</h3>
-      <p style="margin:0; font-size:0.85rem; color:#575e6a; line-height:1.5;">Move your paddle left and right using the mouse or WASD/Arrow keys.</p>
-      <button id="startBtn">START</button>
+      <h3 style="margin:0; font-size:1.1rem; color:#6a1b9a;">Mini Sudoku</h3>
+      <p style="margin:0; font-size:0.8rem; color:#575e6a; line-height:1.5;">Fill grid with numbers 1 to 4! No duplicate numbers in any row, column, or 2x2 square box.</p>
+      <button class="btn" id="startBtn" style="padding:10px 20px;">START</button>
     </div>
 
     <div class="screen" id="gameOverScreen" style="display: none;">
-      <h3 style="color: #d81b60; margin:0; font-size:1.4rem; font-weight:800;">GAME OVER</h3>
-      <p style="margin:0; font-weight:600;">Final Score: <span id="finalScore">0</span></p>
-      <button id="restartBtn">Play Again</button>
+      <h3 style="color: #2e7d32; margin:0; font-size:1.4rem; font-weight:800;">🏆 SOLVED!</h3>
+      <p style="margin:0; font-size:0.85rem; color:#575e6a;">Congratulations, you solved the sudoku puzzle!</p>
+      <button class="btn" id="restartBtn" style="padding:10px 20px;">Play Again</button>
     </div>
   </div>
-  <div class="desc">Dodge falling items! Survival score adds points.</div>
+
+  <div class="desc">Tap a cell, then tap a number to fill it in! Clear errors to complete.</div>
 
   <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    const scoreEl = document.getElementById('score');
-    const bestEl = document.getElementById('best');
-    const finalScoreEl = document.getElementById('finalScore');
+    const boardEl = document.getElementById('board');
     const startScreen = document.getElementById('startScreen');
     const gameOverScreen = document.getElementById('gameOverScreen');
     const startBtn = document.getElementById('startBtn');
     const restartBtn = document.getElementById('restartBtn');
+    const btnErase = document.getElementById('btnErase');
 
+    // Solution sheet
+    const SOLUTIONS = [
+      [1, 2, 3, 4, 3, 4, 1, 2, 2, 3, 4, 1, 4, 1, 2, 3],
+      [4, 3, 2, 1, 1, 2, 4, 3, 3, 4, 1, 2, 2, 1, 3, 4],
+      [2, 1, 4, 3, 4, 3, 2, 1, 1, 2, 3, 4, 3, 4, 1, 2]
+    ];
+
+    let currentSolution = [];
+    let boardState = []; // 0 for blank
+    let selectedCellIdx = null;
     let gameActive = false;
-    let score = 0;
-    let bestScore = parseInt(localStorage.getItem('best_Sudoku_Neon_Grid')) || 0;
-    bestEl.innerText = bestScore;
-
-    const player = {
-      x: canvas.width / 2 - 40,
-      y: canvas.height - 25,
-      width: 80,
-      height: 12,
-      speed: 8,
-      color: '#2e7d32'
-    };
-
-    let items = [];
-    let spawnTimer = 0;
-    let keys = {};
-
-    window.addEventListener('keydown', (e) => {
-      if([32, 37, 39, 38, 40].includes(e.keyCode)) e.preventDefault();
-      keys[e.key] = true;
-    });
-    window.addEventListener('keyup', (e) => {
-      keys[e.key] = false;
-    });
-    
-    canvas.addEventListener('mousemove', (e) => {
-      if (!gameActive) return;
-      const rect = canvas.getBoundingClientRect();
-      const root = document.documentElement;
-      const mouseX = e.clientX - rect.left - root.scrollLeft;
-      player.x = mouseX - player.width / 2;
-      
-      if (player.x < 0) player.x = 0;
-      if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
-    });
-
-    function spawnItem() {
-      const size = Math.random() * 12 + 8;
-      items.push({
-        x: Math.random() * (canvas.width - size * 2) + size,
-        y: -size,
-        radius: size,
-        speed: Math.random() * 3 + 2.5 + (score / 300),
-        color: ['#d81b60', '#e65100', '#0076ff', '#6200ea', '#2e7d32'][Math.floor(Math.random() * 5)]
-      });
-    }
 
     function initGame() {
-      items = [];
-      score = 0;
-      scoreEl.innerText = score;
-      player.x = canvas.width / 2 - 40;
+      // Pick a random solution template
+      const solIdx = Math.floor(Math.random() * SOLUTIONS.length);
+      currentSolution = SOLUTIONS[solIdx];
+      
+      boardState = [];
+      selectedCellIdx = null;
       gameActive = true;
       startScreen.style.display = 'none';
       gameOverScreen.style.display = 'none';
-      requestAnimationFrame(gameLoop);
+
+      // Hide 7 to 9 cells for puzzle
+      const hideIndices = [];
+      while (hideIndices.length < 8) {
+        const rIdx = Math.floor(Math.random() * 16);
+        if (!hideIndices.includes(rIdx)) {
+          hideIndices.push(rIdx);
+        }
+      }
+
+      for (let i = 0; i < 16; i++) {
+        boardState.push({
+          val: hideIndices.includes(i) ? 0 : currentSolution[i],
+          given: !hideIndices.includes(i),
+          error: false
+        });
+      }
+
+      renderBoard();
     }
 
-    function triggerGameOver() {
-      gameActive = false;
-      finalScoreEl.innerText = score;
-      gameOverScreen.style.display = 'flex';
-      if (score > bestScore) {
-        bestScore = score;
-        bestEl.innerText = bestScore;
-        localStorage.setItem('best_Sudoku_Neon_Grid', bestScore);
+    function renderBoard() {
+      boardEl.innerHTML = '';
+      for (let i = 0; i < 16; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        const data = boardState[i];
+
+        if (data.given) {
+          cell.classList.add('given');
+          cell.innerText = data.val;
+        } else {
+          if (data.val !== 0) {
+            cell.innerText = data.val;
+          }
+          
+          if (data.error) {
+            cell.classList.add('error');
+          }
+          
+          if (selectedCellIdx === i) {
+            cell.classList.add('selected');
+          }
+
+          cell.addEventListener('click', () => cellClick(i));
+        }
+
+        boardEl.appendChild(cell);
       }
     }
 
-    function gameLoop() {
+    function cellClick(idx) {
       if (!gameActive) return;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      selectedCellIdx = idx;
+      renderBoard();
+    }
 
-      if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
-        player.x -= player.speed;
-      }
-      if (keys['ArrowRight'] || keys['d'] || keys['D']) {
-        player.x += player.speed;
-      }
+    // Number Pad events
+    document.querySelectorAll('.num-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (!gameActive || selectedCellIdx === null) return;
+        const num = parseInt(btn.innerText);
+        fillNumber(num);
+      });
+    });
+
+    btnErase.addEventListener('click', () => {
+      if (!gameActive || selectedCellIdx === null) return;
+      fillNumber(0);
+    });
+
+    function fillNumber(num) {
+      const cell = boardState[selectedCellIdx];
+      if (cell.given) return;
+
+      cell.val = num;
+      cell.error = false;
       
-      if (player.x < 0) player.x = 0;
-      if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
+      // Perform validation check
+      validateBoard();
+      renderBoard();
+      
+      // Check Win
+      checkWin();
+    }
 
-      ctx.fillStyle = player.color;
-      ctx.beginPath();
-      ctx.roundRect ? ctx.roundRect(player.x, player.y, player.width, player.height, 4) : ctx.rect(player.x, player.y, player.width, player.height);
-      ctx.fill();
+    function validateBoard() {
+      // Validate entries compared to current solution
+      for (let i = 0; i < 16; i++) {
+        if (!boardState[i].given && boardState[i].val !== 0) {
+          // If value is filled but doesn't match the solution value, mark error
+          boardState[i].error = boardState[i].val !== currentSolution[i];
+        }
+      }
+    }
 
-      spawnTimer++;
-      if (spawnTimer > Math.max(12 - score / 150, 4)) {
-        spawnItem();
-        spawnTimer = 0;
+    function checkWin() {
+      let solved = true;
+      for (let i = 0; i < 16; i++) {
+        if (boardState[i].val === 0 || boardState[i].error) {
+          solved = false;
+          break;
+        }
       }
 
-      for (let i = items.length - 1; i >= 0; i--) {
-        const item = items[i];
-        item.y += item.speed;
-
-        const closestX = Math.max(player.x, Math.min(item.x, player.x + player.width));
-        const closestY = Math.max(player.y, Math.min(item.y, player.y + player.height));
-        const distanceX = item.x - closestX;
-        const distanceY = item.y - closestY;
-        const distanceSquared = (distanceX * distanceX) + (distanceY * distanceY);
-
-        if (distanceSquared < (item.radius * item.radius)) {
-          triggerGameOver();
-          return;
-        }
-
-        if (item.y > canvas.height + item.radius) {
-          items.splice(i, 1);
-          score += 10;
-          scoreEl.innerText = score;
-          continue;
-        }
-
-        ctx.fillStyle = item.color;
-        ctx.beginPath();
-        ctx.arc(item.x, item.y, item.radius, 0, Math.PI * 2);
-        ctx.fill();
+      if (solved && gameActive) {
+        gameActive = false;
+        gameOverScreen.style.display = 'flex';
       }
-
-      requestAnimationFrame(gameLoop);
     }
 
     startBtn.addEventListener('click', initGame);

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hex Tetris Puzzle</title>
+  <title>Retro Tetris</title>
   <style>
     body {
       margin: 0;
@@ -19,88 +19,140 @@
     }
     h2 {
       margin: 0 0 10px;
-      color: #2e7d32;
+      color: #e65100;
       font-weight: 800;
     }
     .info {
       font-size: 1.1rem;
-      margin-bottom: 15px;
+      margin-bottom: 12px;
       display: flex;
       gap: 30px;
       font-weight: 700;
       color: #575e6a;
     }
+    .game-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
     canvas {
-      background: #ffffff;
-      border: 3px solid #2e7d32;
-      border-radius: 16px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+      background: #111;
+      border: 3px solid #e65100;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    .controls {
+      margin-top: 12px;
+      display: flex;
+      gap: 8px;
+    }
+    .btn {
+      background: #e65100;
+      color: white;
+      border: none;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: bold;
+      cursor: pointer;
+      user-select: none;
+    }
+    .btn:active {
+      transform: scale(0.95);
     }
     .screen {
       position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
       background: rgba(255, 255, 255, 0.98);
       border: 1px solid rgba(0,0,0,0.06);
-      padding: 30px;
+      padding: 25px;
       border-radius: 16px;
       text-align: center;
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 15px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
       width: 80%;
-      max-width: 320px;
-    }
-    button {
-      background: #2e7d32;
-      color: white;
-      border: none;
-      padding: 12px 24px;
-      border-radius: 10px;
-      font-size: 1rem;
-      font-weight: bold;
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-    button:hover {
-      transform: scale(1.04);
+      max-width: 260px;
+      z-index: 10;
     }
     .desc {
       color: #8d949e;
-      font-size: 0.85rem;
-      margin-top: 15px;
+      font-size: 0.8rem;
+      margin-top: 10px;
       font-weight: 500;
+      text-align: center;
+      max-width: 320px;
+    }
+    @media (max-width: 480px) {
+      body {
+        padding: 5px;
+      }
+      h2 {
+        font-size: 1.25rem;
+        margin-bottom: 5px;
+      }
+      .info {
+        font-size: 0.95rem;
+        margin-bottom: 8px;
+      }
+      canvas {
+        max-width: 70vw;
+        height: auto;
+      }
+      .controls {
+        gap: 5px;
+      }
+      .btn {
+        padding: 8px 10px;
+        font-size: 0.75rem;
+      }
+      .desc {
+        font-size: 0.7rem;
+      }
     }
   </style>
 </head>
 <body>
-  <h2>Hex Tetris Puzzle</h2>
+  <h2>Retro Tetris</h2>
   <div class="info">
     <div>Score: <span id="score">0</span></div>
-    <div>Best: <span id="best">0</span></div>
   </div>
-  <div style="position: relative; display: flex; align-items: center; justify-content: center;">
-    <canvas id="gameCanvas" width="440" height="330"></canvas>
+  
+  <div class="game-area">
+    <canvas id="gameCanvas" width="220" height="400"></canvas>
     
     <div class="screen" id="startScreen">
-      <h3 style="margin:0; font-size: 1.15rem;">Dodge the Spheres</h3>
-      <p style="margin:0; font-size:0.85rem; color:#575e6a; line-height:1.5;">Move your paddle left and right using the mouse or WASD/Arrow keys.</p>
-      <button id="startBtn">START</button>
+      <h3 style="margin:0; font-size:1.1rem; color:#e65100;">Classic Tetris</h3>
+      <p style="margin:0; font-size:0.8rem; color:#575e6a; line-height:1.5;">Clear lines by stacking shapes! Use Keyboard Arrow keys or screen buttons below to control.</p>
+      <button class="btn" id="startBtn">START</button>
     </div>
 
     <div class="screen" id="gameOverScreen" style="display: none;">
-      <h3 style="color: #d81b60; margin:0; font-size:1.4rem; font-weight:800;">GAME OVER</h3>
+      <h3 style="color: #d81b60; margin:0; font-size:1.3rem; font-weight:800;">GAME OVER</h3>
       <p style="margin:0; font-weight:600;">Final Score: <span id="finalScore">0</span></p>
-      <button id="restartBtn">Play Again</button>
+      <button class="btn" id="restartBtn">Play Again</button>
     </div>
   </div>
-  <div class="desc">Dodge falling items! Survival score adds points.</div>
+
+  <div class="controls" id="controlBar">
+    <button class="btn" id="btnLeft">◀</button>
+    <button class="btn" id="btnRot">Rotate</button>
+    <button class="btn" id="btnRight">▶</button>
+    <button class="btn" id="btnDown">▼</button>
+    <button class="btn" id="btnDrop">Drop</button>
+  </div>
+
+  <div class="desc">Left/Right arrows to move, Up to rotate, Down to drop. Stack blocks neatly!</div>
 
   <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     const scoreEl = document.getElementById('score');
-    const bestEl = document.getElementById('best');
     const finalScoreEl = document.getElementById('finalScore');
     const startScreen = document.getElementById('startScreen');
     const gameOverScreen = document.getElementById('gameOverScreen');
@@ -109,60 +161,224 @@
 
     let gameActive = false;
     let score = 0;
-    let bestScore = parseInt(localStorage.getItem('best_Hex_Tetris_Puzzle')) || 0;
-    bestEl.innerText = bestScore;
 
-    const player = {
-      x: canvas.width / 2 - 40,
-      y: canvas.height - 25,
-      width: 80,
-      height: 12,
-      speed: 8,
-      color: '#2e7d32'
+    const COLS = 10;
+    const ROWS = 20;
+    const BLOCK_SIZE = 20;
+
+    let board = [];
+    function initBoard() {
+      board = [];
+      for (let r = 0; r < ROWS; r++) {
+        board[r] = [];
+        for (let c = 0; c < COLS; c++) {
+          board[r][c] = 0;
+        }
+      }
+    }
+
+    const SHAPES = [
+      [],
+      [[1, 1, 1, 1]], // I
+      [[1, 1, 1], [0, 1, 0]], // T
+      [[1, 1, 1], [1, 0, 0]], // L
+      [[1, 1, 1], [0, 0, 1]], // J
+      [[1, 1], [1, 1]], // O
+      [[1, 1, 0], [0, 1, 1]], // Z
+      [[0, 1, 1], [1, 1, 0]]  // S
+    ];
+
+    const COLORS = [
+      null,
+      '#00e5ff', // Cyan
+      '#d500f9', // Purple
+      '#ffab00', // Orange
+      '#2979ff', // Blue
+      '#ffd600', // Yellow
+      '#ff1744', // Red
+      '#00e676'  // Green
+    ];
+
+    let currentPiece = {
+      matrix: null,
+      x: 0,
+      y: 0,
+      colorId: 0
     };
 
-    let items = [];
-    let spawnTimer = 0;
-    let keys = {};
+    function spawnPiece() {
+      const id = Math.floor(Math.random() * 7) + 1;
+      currentPiece.matrix = SHAPES[id];
+      currentPiece.colorId = id;
+      currentPiece.y = 0;
+      currentPiece.x = Math.floor((COLS - currentPiece.matrix[0].length) / 2);
 
-    window.addEventListener('keydown', (e) => {
-      if([32, 37, 39, 38, 40].includes(e.keyCode)) e.preventDefault();
-      keys[e.key] = true;
-    });
-    window.addEventListener('keyup', (e) => {
-      keys[e.key] = false;
-    });
-    
-    canvas.addEventListener('mousemove', (e) => {
+      if (collide()) {
+        triggerGameOver();
+      }
+    }
+
+    function collide() {
+      const m = currentPiece.matrix;
+      for (let r = 0; r < m.length; r++) {
+        for (let c = 0; c < m[r].length; c++) {
+          if (m[r][c] !== 0) {
+            const nextX = currentPiece.x + c;
+            const nextY = currentPiece.y + r;
+            if (nextX < 0 || nextX >= COLS || nextY >= ROWS) {
+              return true;
+            }
+            if (nextY >= 0 && board[nextY][nextX] !== 0) {
+              return true;
+            }
+          }
+        }
+      }
+      return false;
+    }
+
+    function merge() {
+      const m = currentPiece.matrix;
+      for (let r = 0; r < m.length; r++) {
+        for (let c = 0; c < m[r].length; c++) {
+          if (m[r][c] !== 0) {
+            board[currentPiece.y + r][currentPiece.x + c] = currentPiece.colorId;
+          }
+        }
+      }
+    }
+
+    function rotate(matrix) {
+      const n = matrix.length;
+      const m = matrix[0].length;
+      let rotated = [];
+      for (let c = 0; c < m; c++) {
+        rotated[c] = [];
+        for (let r = 0; r < n; r++) {
+          rotated[c][r] = matrix[n - 1 - r][c];
+        }
+      }
+      return rotated;
+    }
+
+    function rotatePiece() {
+      const original = currentPiece.matrix;
+      currentPiece.matrix = rotate(currentPiece.matrix);
+      if (collide()) {
+        currentPiece.matrix = original;
+      }
+    }
+
+    function moveLeft() {
+      currentPiece.x--;
+      if (collide()) currentPiece.x++;
+    }
+
+    function moveRight() {
+      currentPiece.x++;
+      if (collide()) currentPiece.x--;
+    }
+
+    function moveDown() {
+      currentPiece.y++;
+      if (collide()) {
+        currentPiece.y--;
+        merge();
+        clearLines();
+        spawnPiece();
+      }
+      dropCounter = 0;
+    }
+
+    function hardDrop() {
+      while (!collide()) {
+        currentPiece.y++;
+      }
+      currentPiece.y--;
+      merge();
+      clearLines();
+      spawnPiece();
+      dropCounter = 0;
+    }
+
+    function clearLines() {
+      let linesCleared = 0;
+      for (let r = ROWS - 1; r >= 0; r--) {
+        let full = true;
+        for (let c = 0; c < COLS; c++) {
+          if (board[r][c] === 0) {
+            full = false;
+            break;
+          }
+        }
+        if (full) {
+          board.splice(r, 1);
+          board.unshift(new Array(COLS).fill(0));
+          linesCleared++;
+          r++; // Check same row index again after splice
+        }
+      }
+      if (linesCleared > 0) {
+        score += [0, 40, 100, 300, 1200][linesCleared] || 1200;
+        scoreEl.innerText = score;
+      }
+    }
+
+    let dropCounter = 0;
+    let dropInterval = 1000; // 1 second
+    let lastTime = 0;
+
+    function gameLoop(time = 0) {
       if (!gameActive) return;
-      const rect = canvas.getBoundingClientRect();
-      const root = document.documentElement;
-      const mouseX = e.clientX - rect.left - root.scrollLeft;
-      player.x = mouseX - player.width / 2;
       
-      if (player.x < 0) player.x = 0;
-      if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
-    });
+      const deltaTime = time - lastTime;
+      lastTime = time;
+      
+      dropCounter += deltaTime;
+      if (dropCounter > dropInterval) {
+        moveDown();
+      }
 
-    function spawnItem() {
-      const size = Math.random() * 12 + 8;
-      items.push({
-        x: Math.random() * (canvas.width - size * 2) + size,
-        y: -size,
-        radius: size,
-        speed: Math.random() * 3 + 2.5 + (score / 300),
-        color: ['#d81b60', '#e65100', '#0076ff', '#6200ea', '#2e7d32'][Math.floor(Math.random() * 5)]
-      });
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw grid board
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          if (board[r][c] !== 0) {
+            ctx.fillStyle = COLORS[board[r][c]];
+            ctx.fillRect(c * BLOCK_SIZE, r * BLOCK_SIZE, BLOCK_SIZE - 1, BLOCK_SIZE - 1);
+          }
+        }
+      }
+
+      // Draw current piece
+      if (currentPiece.matrix) {
+        ctx.fillStyle = COLORS[currentPiece.colorId];
+        const m = currentPiece.matrix;
+        for (let r = 0; r < m.length; r++) {
+          for (let c = 0; c < m[r].length; c++) {
+            if (m[r][c] !== 0) {
+              ctx.fillRect((currentPiece.x + c) * BLOCK_SIZE, (currentPiece.y + r) * BLOCK_SIZE, BLOCK_SIZE - 1, BLOCK_SIZE - 1);
+            }
+          }
+        }
+      }
     }
 
     function initGame() {
-      items = [];
       score = 0;
       scoreEl.innerText = score;
-      player.x = canvas.width / 2 - 40;
+      initBoard();
       gameActive = true;
       startScreen.style.display = 'none';
       gameOverScreen.style.display = 'none';
+      spawnPiece();
+      lastTime = performance.now();
       requestAnimationFrame(gameLoop);
     }
 
@@ -170,68 +386,36 @@
       gameActive = false;
       finalScoreEl.innerText = score;
       gameOverScreen.style.display = 'flex';
-      if (score > bestScore) {
-        bestScore = score;
-        bestEl.innerText = bestScore;
-        localStorage.setItem('best_Hex_Tetris_Puzzle', bestScore);
-      }
     }
 
-    function gameLoop() {
+    // Keyboard handlers
+    window.addEventListener('keydown', (e) => {
       if (!gameActive) return;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
-        player.x -= player.speed;
+      if (e.key === 'ArrowLeft') {
+        moveLeft();
+        draw();
+      } else if (e.key === 'ArrowRight') {
+        moveRight();
+        draw();
+      } else if (e.key === 'ArrowDown') {
+        moveDown();
+        draw();
+      } else if (e.key === 'ArrowUp') {
+        rotatePiece();
+        draw();
+      } else if (e.key === 'Space') {
+        e.preventDefault();
+        hardDrop();
+        draw();
       }
-      if (keys['ArrowRight'] || keys['d'] || keys['D']) {
-        player.x += player.speed;
-      }
-      
-      if (player.x < 0) player.x = 0;
-      if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
+    });
 
-      ctx.fillStyle = player.color;
-      ctx.beginPath();
-      ctx.roundRect ? ctx.roundRect(player.x, player.y, player.width, player.height, 4) : ctx.rect(player.x, player.y, player.width, player.height);
-      ctx.fill();
-
-      spawnTimer++;
-      if (spawnTimer > Math.max(12 - score / 150, 4)) {
-        spawnItem();
-        spawnTimer = 0;
-      }
-
-      for (let i = items.length - 1; i >= 0; i--) {
-        const item = items[i];
-        item.y += item.speed;
-
-        const closestX = Math.max(player.x, Math.min(item.x, player.x + player.width));
-        const closestY = Math.max(player.y, Math.min(item.y, player.y + player.height));
-        const distanceX = item.x - closestX;
-        const distanceY = item.y - closestY;
-        const distanceSquared = (distanceX * distanceX) + (distanceY * distanceY);
-
-        if (distanceSquared < (item.radius * item.radius)) {
-          triggerGameOver();
-          return;
-        }
-
-        if (item.y > canvas.height + item.radius) {
-          items.splice(i, 1);
-          score += 10;
-          scoreEl.innerText = score;
-          continue;
-        }
-
-        ctx.fillStyle = item.color;
-        ctx.beginPath();
-        ctx.arc(item.x, item.y, item.radius, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      requestAnimationFrame(gameLoop);
-    }
+    // Mobile buttons bindings
+    document.getElementById('btnLeft').addEventListener('click', () => { moveLeft(); draw(); });
+    document.getElementById('btnRight').addEventListener('click', () => { moveRight(); draw(); });
+    document.getElementById('btnRot').addEventListener('click', () => { rotatePiece(); draw(); });
+    document.getElementById('btnDown').addEventListener('click', () => { moveDown(); draw(); });
+    document.getElementById('btnDrop').addEventListener('click', () => { hardDrop(); draw(); });
 
     startBtn.addEventListener('click', initGame);
     restartBtn.addEventListener('click', initGame);

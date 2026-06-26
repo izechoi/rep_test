@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Speedway Cyber Racer</title>
+  <title>Cyber Speed Racing</title>
   <style>
     body {
       margin: 0;
@@ -19,8 +19,9 @@
     }
     h2 {
       margin: 0 0 10px;
-      color: #e65100;
+      color: #ff3d00;
       font-weight: 800;
+      text-shadow: 0 0 8px rgba(255, 61, 0, 0.2);
     }
     .info {
       font-size: 1.1rem;
@@ -30,71 +31,114 @@
       font-weight: 700;
       color: #575e6a;
     }
+    .game-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
     canvas {
-      background: #ffffff;
-      border: 3px solid #e65100;
+      background: #333333;
+      border: 3px solid #ff3d00;
       border-radius: 16px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    }
+    .controls {
+      margin-top: 12px;
+      display: flex;
+      gap: 15px;
+    }
+    .btn {
+      background: #ff3d00;
+      color: white;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      user-select: none;
+    }
+    .btn:active {
+      transform: scale(0.95);
     }
     .screen {
       position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
       background: rgba(255, 255, 255, 0.98);
       border: 1px solid rgba(0,0,0,0.06);
-      padding: 30px;
+      padding: 25px;
       border-radius: 16px;
       text-align: center;
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 15px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
       width: 80%;
-      max-width: 320px;
-    }
-    button {
-      background: #e65100;
-      color: white;
-      border: none;
-      padding: 12px 24px;
-      border-radius: 10px;
-      font-size: 1rem;
-      font-weight: bold;
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-    button:hover {
-      transform: scale(1.04);
+      max-width: 280px;
+      z-index: 10;
     }
     .desc {
       color: #8d949e;
       font-size: 0.85rem;
       margin-top: 15px;
       font-weight: 500;
+      text-align: center;
+    }
+    @media (max-width: 480px) {
+      body {
+        padding: 5px;
+      }
+      h2 {
+        font-size: 1.25rem;
+      }
+      canvas {
+        max-width: 85vw;
+        height: auto;
+      }
+      .btn {
+        padding: 8px 18px;
+        font-size: 0.85rem;
+      }
+      .desc {
+        font-size: 0.75rem;
+      }
     }
   </style>
 </head>
 <body>
-  <h2>Speedway Cyber Racer</h2>
+  <h2>Cyber Speed Racing</h2>
   <div class="info">
-    <div>Score: <span id="score">0</span></div>
-    <div>Best: <span id="best">0</span></div>
+    <div>Distance: <span id="score">0</span>m</div>
+    <div>Best: <span id="best">0</span>m</div>
   </div>
-  <div style="position: relative; display: flex; align-items: center; justify-content: center;">
-    <canvas id="gameCanvas" width="440" height="330"></canvas>
-    
+
+  <div class="game-area">
+    <canvas id="gameCanvas" width="280" height="380"></canvas>
+
+    {/* Screen Overlays */}
     <div class="screen" id="startScreen">
-      <h3 style="margin:0; font-size: 1.15rem;">Dodge the Spheres</h3>
-      <p style="margin:0; font-size:0.85rem; color:#575e6a; line-height:1.5;">Move your paddle left and right using the mouse or WASD/Arrow keys.</p>
-      <button id="startBtn">START</button>
+      <h3 style="margin:0; font-size:1.1rem; color:#ff3d00; text-shadow:none;">Speed Racing</h3>
+      <p style="margin:0; font-size:0.8rem; color:#575e6a; line-height:1.5;">Steer the car to avoid traffic! Use Left/Right arrow keys or screen buttons below to slide between lanes.</p>
+      <button class="btn" id="startBtn">START</button>
     </div>
 
     <div class="screen" id="gameOverScreen" style="display: none;">
-      <h3 style="color: #d81b60; margin:0; font-size:1.4rem; font-weight:800;">GAME OVER</h3>
-      <p style="margin:0; font-weight:600;">Final Score: <span id="finalScore">0</span></p>
-      <button id="restartBtn">Play Again</button>
+      <h3 style="color: #d81b60; margin:0; font-size:1.3rem; font-weight:800;">GAME OVER</h3>
+      <p style="margin:0; font-weight:600;">Distance Reached: <span id="finalScore">0</span>m</p>
+      <button class="btn" id="restartBtn">Play Again</button>
     </div>
   </div>
-  <div class="desc">Dodge falling items! Survival score adds points.</div>
+
+  <div class="controls" id="controlBar">
+    <button class="btn" id="btnLeft">◀ STEER LEFT</button>
+    <button class="btn" id="btnRight">STEER RIGHT ▶</button>
+  </div>
+
+  <div class="desc">Dodge oncoming traffic! Surviving longer increases speed.</div>
 
   <script>
     const canvas = document.getElementById('gameCanvas');
@@ -102,6 +146,7 @@
     const scoreEl = document.getElementById('score');
     const bestEl = document.getElementById('best');
     const finalScoreEl = document.getElementById('finalScore');
+    
     const startScreen = document.getElementById('startScreen');
     const gameOverScreen = document.getElementById('gameOverScreen');
     const startBtn = document.getElementById('startBtn');
@@ -109,61 +154,70 @@
 
     let gameActive = false;
     let score = 0;
-    let bestScore = parseInt(localStorage.getItem('best_Speedway_Cyber_Racer')) || 0;
+    let bestScore = parseInt(localStorage.getItem('best_speed_racing')) || 0;
     bestEl.innerText = bestScore;
 
-    const player = {
-      x: canvas.width / 2 - 40,
-      y: canvas.height - 25,
-      width: 80,
-      height: 12,
-      speed: 8,
-      color: '#e65100'
+    // Road lane parameters
+    const laneWidth = canvas.width / 3;
+
+    // Car settings
+    const car = {
+      lane: 1, // 0, 1, 2 (Left, Middle, Right)
+      x: 0, // calculated from lane
+      y: canvas.height - 75,
+      width: 32,
+      height: 60,
+      color: '#ff3d00'
     };
 
-    let items = [];
-    let spawnTimer = 0;
-    let keys = {};
-
-    window.addEventListener('keydown', (e) => {
-      if([32, 37, 39, 38, 40].includes(e.keyCode)) e.preventDefault();
-      keys[e.key] = true;
-    });
-    window.addEventListener('keyup', (e) => {
-      keys[e.key] = false;
-    });
-    
-    canvas.addEventListener('mousemove', (e) => {
-      if (!gameActive) return;
-      const rect = canvas.getBoundingClientRect();
-      const root = document.documentElement;
-      const mouseX = e.clientX - rect.left - root.scrollLeft;
-      player.x = mouseX - player.width / 2;
-      
-      if (player.x < 0) player.x = 0;
-      if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
-    });
-
-    function spawnItem() {
-      const size = Math.random() * 12 + 8;
-      items.push({
-        x: Math.random() * (canvas.width - size * 2) + size,
-        y: -size,
-        radius: size,
-        speed: Math.random() * 3 + 2.5 + (score / 300),
-        color: ['#d81b60', '#e65100', '#0076ff', '#6200ea', '#2e7d32'][Math.floor(Math.random() * 5)]
-      });
-    }
+    let traffic = [];
+    let trafficTimer = 0;
+    let roadY = 0;
 
     function initGame() {
-      items = [];
       score = 0;
       scoreEl.innerText = score;
-      player.x = canvas.width / 2 - 40;
+      car.lane = 1;
+      traffic = [];
+      trafficTimer = 0;
       gameActive = true;
       startScreen.style.display = 'none';
       gameOverScreen.style.display = 'none';
       requestAnimationFrame(gameLoop);
+    }
+
+    function steerLeft() {
+      if (!gameActive) return;
+      if (car.lane > 0) car.lane--;
+    }
+
+    function steerRight() {
+      if (!gameActive) return;
+      if (car.lane < 2) car.lane++;
+    }
+
+    // Input handlers
+    window.addEventListener('keydown', (e) => {
+      if (!gameActive) return;
+      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') { steerLeft(); e.preventDefault(); }
+      else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') { steerRight(); e.preventDefault(); }
+    });
+
+    // Touch D-pad binding
+    document.getElementById('btnLeft').addEventListener('click', steerLeft);
+    document.getElementById('btnRight').addEventListener('click', steerRight);
+
+    function spawnTraffic() {
+      const lane = Math.floor(Math.random() * 3);
+      traffic.push({
+        lane: lane,
+        x: 0, // calculated
+        y: -70,
+        width: 32,
+        height: 60,
+        speed: 3.5 + (score / 300),
+        color: ['#00e5ff', '#ffeb3b', '#00e676', '#e040fb'][Math.floor(Math.random() * 4)]
+      });
     }
 
     function triggerGameOver() {
@@ -173,7 +227,7 @@
       if (score > bestScore) {
         bestScore = score;
         bestEl.innerText = bestScore;
-        localStorage.setItem('best_Speedway_Cyber_Racer', bestScore);
+        localStorage.setItem('best_speed_racing', bestScore);
       }
     }
 
@@ -181,53 +235,97 @@
       if (!gameActive) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
-        player.x -= player.speed;
-      }
-      if (keys['ArrowRight'] || keys['d'] || keys['D']) {
-        player.x += player.speed;
-      }
+      // Draw road markings (scrolling effect)
+      roadY += 4 + (score / 400);
+      if (roadY > 40) roadY = 0;
+      ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+      ctx.lineWidth = 4;
+      ctx.setLineDash([15, 15]);
       
-      if (player.x < 0) player.x = 0;
-      if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
-
-      ctx.fillStyle = player.color;
+      // Left lane line
       ctx.beginPath();
-      ctx.roundRect ? ctx.roundRect(player.x, player.y, player.width, player.height, 4) : ctx.rect(player.x, player.y, player.width, player.height);
-      ctx.fill();
+      ctx.moveTo(laneWidth, roadY - 40);
+      ctx.lineTo(laneWidth, canvas.height + 40);
+      ctx.stroke();
 
-      spawnTimer++;
-      if (spawnTimer > Math.max(12 - score / 150, 4)) {
-        spawnItem();
-        spawnTimer = 0;
+      // Right lane line
+      ctx.beginPath();
+      ctx.moveTo(laneWidth * 2, roadY - 40);
+      ctx.lineTo(laneWidth * 2, canvas.height + 40);
+      ctx.stroke();
+
+      // Draw solid road boundaries
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 6;
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.moveTo(2, 0); ctx.lineTo(2, canvas.height);
+      ctx.moveTo(canvas.width - 2, 0); ctx.lineTo(canvas.width - 2, canvas.height);
+      ctx.stroke();
+
+      // Update distance score
+      score += 1;
+      scoreEl.innerText = score;
+
+      // Position Player Car smoothly
+      const targetX = car.lane * laneWidth + (laneWidth - car.width) / 2;
+      car.x += (targetX - car.x) * 0.35;
+
+      // Draw Player Car
+      ctx.fillStyle = car.color;
+      ctx.fillRect(car.x, car.y, car.width, car.height);
+      // Wheels
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(car.x - 3, car.y + 10, 3, 12);
+      ctx.fillRect(car.x + car.width, car.y + 10, 3, 12);
+      ctx.fillRect(car.x - 3, car.y + 40, 3, 12);
+      ctx.fillRect(car.x + car.width, car.y + 40, 3, 12);
+      // Windshield
+      ctx.fillStyle = '#eef2f3';
+      ctx.fillRect(car.x + 4, car.y + 15, car.width - 8, 8);
+
+      // Spawn oncoming traffic
+      trafficTimer++;
+      const spawnInterval = Math.max(80 - Math.floor(score / 150), 35);
+      if (trafficTimer > spawnInterval) {
+        spawnTraffic();
+        trafficTimer = 0;
       }
 
-      for (let i = items.length - 1; i >= 0; i--) {
-        const item = items[i];
-        item.y += item.speed;
+      // Move & Draw traffic
+      for (let i = traffic.length - 1; i >= 0; i--) {
+        const t = traffic[i];
+        t.y += t.speed;
+        
+        t.x = t.lane * laneWidth + (laneWidth - t.width) / 2;
 
-        const closestX = Math.max(player.x, Math.min(item.x, player.x + player.width));
-        const closestY = Math.max(player.y, Math.min(item.y, player.y + player.height));
-        const distanceX = item.x - closestX;
-        const distanceY = item.y - closestY;
-        const distanceSquared = (distanceX * distanceX) + (distanceY * distanceY);
+        // Draw traffic car
+        ctx.fillStyle = t.color;
+        ctx.fillRect(t.x, t.y, t.width, t.height);
+        // Wheels
+        ctx.fillStyle = '#000';
+        ctx.fillRect(t.x - 3, t.y + 10, 3, 12);
+        ctx.fillRect(t.x + t.width, t.y + 10, 3, 12);
+        ctx.fillRect(t.x - 3, t.y + 40, 3, 12);
+        ctx.fillRect(t.x + t.width, t.y + 40, 3, 12);
+        // Windshield
+        ctx.fillStyle = '#eef2f3';
+        ctx.fillRect(t.x + 4, t.y + 35, t.width - 8, 8);
 
-        if (distanceSquared < (item.radius * item.radius)) {
+        // Check collision
+        if (
+          t.y + t.height > car.y + 5 &&
+          t.y < car.y + car.height - 5 &&
+          t.lane === car.lane // simple lane based crash or bounding box
+        ) {
           triggerGameOver();
           return;
         }
 
-        if (item.y > canvas.height + item.radius) {
-          items.splice(i, 1);
-          score += 10;
-          scoreEl.innerText = score;
-          continue;
+        // Clean out of bounds
+        if (t.y > canvas.height) {
+          traffic.splice(i, 1);
         }
-
-        ctx.fillStyle = item.color;
-        ctx.beginPath();
-        ctx.arc(item.x, item.y, item.radius, 0, Math.PI * 2);
-        ctx.fill();
       }
 
       requestAnimationFrame(gameLoop);

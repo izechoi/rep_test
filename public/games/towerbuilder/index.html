@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Neon Tower Stacker</title>
+  <title>Tower Builder Stack</title>
   <style>
     body {
       margin: 0;
@@ -19,7 +19,7 @@
     }
     h2 {
       margin: 0 0 10px;
-      color: #d81b60;
+      color: #6200ea;
       font-weight: 800;
     }
     .info {
@@ -31,10 +31,11 @@
       color: #575e6a;
     }
     canvas {
-      background: #ffffff;
-      border: 3px solid #d81b60;
+      background: #fdfdfd;
+      border: 3px solid #6200ea;
       border-radius: 16px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+      cursor: pointer;
     }
     .screen {
       position: absolute;
@@ -49,10 +50,10 @@
       gap: 15px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.08);
       width: 80%;
-      max-width: 320px;
+      max-width: 300px;
     }
     button {
-      background: #d81b60;
+      background: #6200ea;
       color: white;
       border: none;
       padding: 12px 24px;
@@ -60,7 +61,6 @@
       font-size: 1rem;
       font-weight: bold;
       cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
     }
     button:hover {
       transform: scale(1.04);
@@ -71,30 +71,47 @@
       margin-top: 15px;
       font-weight: 500;
     }
+    @media (max-width: 480px) {
+      body {
+        padding: 10px;
+      }
+      h2 {
+        font-size: 1.3rem;
+      }
+      canvas {
+        max-width: 90vw;
+        height: auto;
+      }
+      .desc {
+        font-size: 0.75rem;
+      }
+    }
   </style>
 </head>
 <body>
-  <h2>Neon Tower Stacker</h2>
+  <h2>Tower Builder Stack</h2>
   <div class="info">
-    <div>Score: <span id="score">0</span></div>
+    <div>Height: <span id="score">0</span></div>
     <div>Best: <span id="best">0</span></div>
   </div>
+  
   <div style="position: relative; display: flex; align-items: center; justify-content: center;">
-    <canvas id="gameCanvas" width="440" height="330"></canvas>
+    <canvas id="gameCanvas" width="320" height="400"></canvas>
     
     <div class="screen" id="startScreen">
-      <h3 style="margin:0; font-size: 1.15rem;">Dodge the Spheres</h3>
-      <p style="margin:0; font-size:0.85rem; color:#575e6a; line-height:1.5;">Move your paddle left and right using the mouse or WASD/Arrow keys.</p>
+      <h3 style="margin:0; font-size: 1.15rem;">Tower Builder</h3>
+      <p style="margin:0; font-size:0.85rem; color:#575e6a; line-height:1.5;">Tap screen or press SPACE to drop the moving block. Stack them as high as you can!</p>
       <button id="startBtn">START</button>
     </div>
 
     <div class="screen" id="gameOverScreen" style="display: none;">
-      <h3 style="color: #d81b60; margin:0; font-size:1.4rem; font-weight:800;">GAME OVER</h3>
-      <p style="margin:0; font-weight:600;">Final Score: <span id="finalScore">0</span></p>
+      <h3 style="color: #6200ea; margin:0; font-size:1.4rem; font-weight:800;">GAME OVER</h3>
+      <p style="margin:0; font-weight:600;">Tower Height: <span id="finalScore">0</span></p>
       <button id="restartBtn">Play Again</button>
     </div>
   </div>
-  <div class="desc">Dodge falling items! Survival score adds points.</div>
+
+  <div class="desc">Tap/Click or Space to stack blocks. Align them perfectly!</div>
 
   <script>
     const canvas = document.getElementById('gameCanvas');
@@ -102,6 +119,7 @@
     const scoreEl = document.getElementById('score');
     const bestEl = document.getElementById('best');
     const finalScoreEl = document.getElementById('finalScore');
+    
     const startScreen = document.getElementById('startScreen');
     const gameOverScreen = document.getElementById('gameOverScreen');
     const startBtn = document.getElementById('startBtn');
@@ -109,62 +127,82 @@
 
     let gameActive = false;
     let score = 0;
-    let bestScore = parseInt(localStorage.getItem('best_Neon_Tower_Stacker')) || 0;
+    let bestScore = parseInt(localStorage.getItem('best_tower_builder')) || 0;
     bestEl.innerText = bestScore;
 
-    const player = {
-      x: canvas.width / 2 - 40,
-      y: canvas.height - 25,
-      width: 80,
-      height: 12,
-      speed: 8,
-      color: '#d81b60'
+    // Game variables
+    const blockHeight = 24;
+    let blocks = [];
+    let currentBlock = {
+      x: 0,
+      width: 150,
+      speed: 3,
+      dx: 3
     };
 
-    let items = [];
-    let spawnTimer = 0;
-    let keys = {};
-
-    window.addEventListener('keydown', (e) => {
-      if([32, 37, 39, 38, 40].includes(e.keyCode)) e.preventDefault();
-      keys[e.key] = true;
-    });
-    window.addEventListener('keyup', (e) => {
-      keys[e.key] = false;
-    });
-    
-    canvas.addEventListener('mousemove', (e) => {
-      if (!gameActive) return;
-      const rect = canvas.getBoundingClientRect();
-      const root = document.documentElement;
-      const mouseX = e.clientX - rect.left - root.scrollLeft;
-      player.x = mouseX - player.width / 2;
-      
-      if (player.x < 0) player.x = 0;
-      if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
-    });
-
-    function spawnItem() {
-      const size = Math.random() * 12 + 8;
-      items.push({
-        x: Math.random() * (canvas.width - size * 2) + size,
-        y: -size,
-        radius: size,
-        speed: Math.random() * 3 + 2.5 + (score / 300),
-        color: ['#d81b60', '#e65100', '#0076ff', '#6200ea', '#2e7d32'][Math.floor(Math.random() * 5)]
-      });
-    }
-
     function initGame() {
-      items = [];
       score = 0;
       scoreEl.innerText = score;
-      player.x = canvas.width / 2 - 40;
+      blocks = [
+        // Base block at bottom
+        { x: 80, width: 160 }
+      ];
+      resetCurrentBlock(160);
       gameActive = true;
       startScreen.style.display = 'none';
       gameOverScreen.style.display = 'none';
       requestAnimationFrame(gameLoop);
     }
+
+    function resetCurrentBlock(width) {
+      currentBlock.width = width;
+      currentBlock.x = 0;
+      currentBlock.dx = (3 + (score / 15)) * (Math.random() > 0.5 ? 1 : -1);
+    }
+
+    function dropBlock() {
+      if (!gameActive) return;
+
+      const baseBlock = blocks[blocks.length - 1];
+      
+      // Calculate overlapping boundaries
+      const left = Math.max(currentBlock.x, baseBlock.x);
+      const right = Math.min(currentBlock.x + currentBlock.width, baseBlock.x + baseBlock.width);
+      const overlapWidth = right - left;
+
+      if (overlapWidth <= 0) {
+        // Drop missed entirely, game over
+        triggerGameOver();
+      } else {
+        // Successfully stacked: trim next block width to overlap
+        blocks.push({
+          x: left,
+          width: overlapWidth
+        });
+        score++;
+        scoreEl.innerText = score;
+        
+        // Keep screen view centered by dropping bottom stack if it exceeds half screen
+        if (blocks.length * blockHeight > canvas.height - 120) {
+          blocks.shift(); // scroll up stack
+        }
+
+        resetCurrentBlock(overlapWidth);
+      }
+    }
+
+    // Input handlers
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        dropBlock();
+      }
+    });
+    canvas.addEventListener('mousedown', dropBlock);
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      dropBlock();
+    });
 
     function triggerGameOver() {
       gameActive = false;
@@ -173,7 +211,7 @@
       if (score > bestScore) {
         bestScore = score;
         bestEl.innerText = bestScore;
-        localStorage.setItem('best_Neon_Tower_Stacker', bestScore);
+        localStorage.setItem('best_tower_builder', bestScore);
       }
     }
 
@@ -181,54 +219,28 @@
       if (!gameActive) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
-        player.x -= player.speed;
-      }
-      if (keys['ArrowRight'] || keys['d'] || keys['D']) {
-        player.x += player.speed;
-      }
-      
-      if (player.x < 0) player.x = 0;
-      if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
+      // Draw all stacked blocks
+      blocks.forEach((b, idx) => {
+        const y = canvas.height - (idx + 1) * blockHeight;
+        ctx.fillStyle = `hsl(${(idx * 15) % 360}, 75%, 60%)`;
+        ctx.fillRect(b.x, y, b.width, blockHeight - 2);
+        // Bevel stroke
+        ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+        ctx.strokeRect(b.x, y, b.width, blockHeight - 2);
+      });
 
-      ctx.fillStyle = player.color;
-      ctx.beginPath();
-      ctx.roundRect ? ctx.roundRect(player.x, player.y, player.width, player.height, 4) : ctx.rect(player.x, player.y, player.width, player.height);
-      ctx.fill();
-
-      spawnTimer++;
-      if (spawnTimer > Math.max(12 - score / 150, 4)) {
-        spawnItem();
-        spawnTimer = 0;
+      // Move current block
+      currentBlock.x += currentBlock.dx;
+      if (currentBlock.x < 0 || currentBlock.x + currentBlock.width > canvas.width) {
+        currentBlock.dx = -currentBlock.dx;
       }
 
-      for (let i = items.length - 1; i >= 0; i--) {
-        const item = items[i];
-        item.y += item.speed;
-
-        const closestX = Math.max(player.x, Math.min(item.x, player.x + player.width));
-        const closestY = Math.max(player.y, Math.min(item.y, player.y + player.height));
-        const distanceX = item.x - closestX;
-        const distanceY = item.y - closestY;
-        const distanceSquared = (distanceX * distanceX) + (distanceY * distanceY);
-
-        if (distanceSquared < (item.radius * item.radius)) {
-          triggerGameOver();
-          return;
-        }
-
-        if (item.y > canvas.height + item.radius) {
-          items.splice(i, 1);
-          score += 10;
-          scoreEl.innerText = score;
-          continue;
-        }
-
-        ctx.fillStyle = item.color;
-        ctx.beginPath();
-        ctx.arc(item.x, item.y, item.radius, 0, Math.PI * 2);
-        ctx.fill();
-      }
+      // Draw current moving block
+      const currentY = canvas.height - (blocks.length + 1) * blockHeight;
+      ctx.fillStyle = `hsl(${(blocks.length * 15) % 360}, 75%, 60%)`;
+      ctx.fillRect(currentBlock.x, currentY, currentBlock.width, blockHeight - 2);
+      ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+      ctx.strokeRect(currentBlock.x, currentY, currentBlock.width, blockHeight - 2);
 
       requestAnimationFrame(gameLoop);
     }

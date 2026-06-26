@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Memory Cards Trainer</title>
+  <title>Cyber Memory Match</title>
   <style>
     body {
       margin: 0;
@@ -19,7 +19,7 @@
     }
     h2 {
       margin: 0 0 10px;
-      color: #6200ea;
+      color: #2e7d32;
       font-weight: 800;
     }
     .info {
@@ -30,207 +30,249 @@
       font-weight: 700;
       color: #575e6a;
     }
-    canvas {
-      background: #ffffff;
-      border: 3px solid #6200ea;
+    .grid-container {
+      position: relative;
+      background: white;
+      padding: 15px;
       border-radius: 16px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+      border: 3px solid #2e7d32;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 60px);
+      grid-template-rows: repeat(4, 60px);
+      gap: 8px;
+      background: #eef2f7;
+      border-radius: 8px;
+      padding: 8px;
+    }
+    .card {
+      background: #2e7d32;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.2s, transform 0.1s;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .card.flipped {
+      background: white;
+      cursor: default;
+    }
+    .card.matched {
+      background: #e2f5e2;
+      border: 1px solid #c8e6c9;
+      cursor: default;
+    }
+    .card:active {
+      transform: scale(0.95);
     }
     .screen {
       position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
       background: rgba(255, 255, 255, 0.98);
       border: 1px solid rgba(0,0,0,0.06);
-      padding: 30px;
+      padding: 25px;
       border-radius: 16px;
       text-align: center;
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 15px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.12);
       width: 80%;
-      max-width: 320px;
+      max-width: 260px;
+      z-index: 10;
     }
     button {
-      background: #6200ea;
+      background: #2e7d32;
       color: white;
       border: none;
-      padding: 12px 24px;
-      border-radius: 10px;
-      font-size: 1rem;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 0.95rem;
       font-weight: bold;
       cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
     }
     button:hover {
-      transform: scale(1.04);
+      transform: scale(1.03);
     }
     .desc {
       color: #8d949e;
       font-size: 0.85rem;
       margin-top: 15px;
       font-weight: 500;
+      text-align: center;
+      max-width: 320px;
+    }
+    @media (max-width: 480px) {
+      body {
+        padding: 10px;
+      }
+      h2 {
+        font-size: 1.3rem;
+      }
+      .grid {
+        grid-template-columns: repeat(4, 52px);
+        grid-template-rows: repeat(4, 52px);
+        gap: 6px;
+      }
+      .card {
+        font-size: 1.6rem;
+      }
+      .desc {
+        font-size: 0.75rem;
+      }
     }
   </style>
 </head>
 <body>
-  <h2>Memory Cards Trainer</h2>
+  <h2>Cyber Memory Match</h2>
   <div class="info">
-    <div>Score: <span id="score">0</span></div>
-    <div>Best: <span id="best">0</span></div>
+    <div>Matches: <span id="matches">0</span>/8</div>
+    <div>Flips: <span id="flips">0</span></div>
   </div>
-  <div style="position: relative; display: flex; align-items: center; justify-content: center;">
-    <canvas id="gameCanvas" width="440" height="330"></canvas>
-    
+
+  <div class="grid-container">
+    <div class="grid" id="grid"></div>
+
     <div class="screen" id="startScreen">
-      <h3 style="margin:0; font-size: 1.15rem;">Dodge the Spheres</h3>
-      <p style="margin:0; font-size:0.85rem; color:#575e6a; line-height:1.5;">Move your paddle left and right using the mouse or WASD/Arrow keys.</p>
+      <h3 style="margin:0; font-size:1.1rem; color:#2e7d32;">Memory Match</h3>
+      <p style="margin:0; font-size:0.8rem; color:#575e6a; line-height:1.5;">Click cards to flip and find the matching pairs of emojis! Complete in as few moves as possible.</p>
       <button id="startBtn">START</button>
     </div>
 
     <div class="screen" id="gameOverScreen" style="display: none;">
-      <h3 style="color: #d81b60; margin:0; font-size:1.4rem; font-weight:800;">GAME OVER</h3>
-      <p style="margin:0; font-weight:600;">Final Score: <span id="finalScore">0</span></p>
+      <h3 style="color: #2e7d32; margin:0; font-size:1.4rem; font-weight:800;">🏆 CONGRATULATIONS!</h3>
+      <p style="margin:0; font-weight:600;">Total Flips: <span id="finalFlips">0</span></p>
       <button id="restartBtn">Play Again</button>
     </div>
   </div>
-  <div class="desc">Dodge falling items! Survival score adds points.</div>
+
+  <div class="desc">Find matching pairs! Challenge your memory.</div>
 
   <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    const scoreEl = document.getElementById('score');
-    const bestEl = document.getElementById('best');
-    const finalScoreEl = document.getElementById('finalScore');
+    const gridEl = document.getElementById('grid');
+    const matchesEl = document.getElementById('matches');
+    const flipsEl = document.getElementById('flips');
+    const finalFlipsEl = document.getElementById('finalFlips');
     const startScreen = document.getElementById('startScreen');
     const gameOverScreen = document.getElementById('gameOverScreen');
     const startBtn = document.getElementById('startBtn');
     const restartBtn = document.getElementById('restartBtn');
 
+    const EMOJIS = ['🐶', '🐱', '🐸', '🐼', '🐯', '🐨', '🦊', '🦁'];
+    let cards = [];
+    let flips = 0;
+    let matches = 0;
+    let flippedCards = [];
+    let lockBoard = false;
     let gameActive = false;
-    let score = 0;
-    let bestScore = parseInt(localStorage.getItem('best_Memory_Cards_Trainer')) || 0;
-    bestEl.innerText = bestScore;
 
-    const player = {
-      x: canvas.width / 2 - 40,
-      y: canvas.height - 25,
-      width: 80,
-      height: 12,
-      speed: 8,
-      color: '#6200ea'
-    };
-
-    let items = [];
-    let spawnTimer = 0;
-    let keys = {};
-
-    window.addEventListener('keydown', (e) => {
-      if([32, 37, 39, 38, 40].includes(e.keyCode)) e.preventDefault();
-      keys[e.key] = true;
-    });
-    window.addEventListener('keyup', (e) => {
-      keys[e.key] = false;
-    });
-    
-    canvas.addEventListener('mousemove', (e) => {
-      if (!gameActive) return;
-      const rect = canvas.getBoundingClientRect();
-      const root = document.documentElement;
-      const mouseX = e.clientX - rect.left - root.scrollLeft;
-      player.x = mouseX - player.width / 2;
+    function initGame() {
+      flips = 0;
+      matches = 0;
+      flippedCards = [];
+      lockBoard = false;
+      gameActive = true;
+      flipsEl.innerText = flips;
+      matchesEl.innerText = matches;
+      startScreen.style.display = 'none';
+      gameOverScreen.style.display = 'none';
       
-      if (player.x < 0) player.x = 0;
-      if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
-    });
+      // Setup cards deck (double EMOJIS and shuffle)
+      const deck = [...EMOJIS, ...EMOJIS];
+      shuffle(deck);
+      
+      cards = deck.map((emoji, index) => ({
+        id: index,
+        emoji: emoji,
+        status: 'hidden' // 'hidden', 'flipped', 'matched'
+      }));
+      
+      renderBoard();
+    }
 
-    function spawnItem() {
-      const size = Math.random() * 12 + 8;
-      items.push({
-        x: Math.random() * (canvas.width - size * 2) + size,
-        y: -size,
-        radius: size,
-        speed: Math.random() * 3 + 2.5 + (score / 300),
-        color: ['#d81b60', '#e65100', '#0076ff', '#6200ea', '#2e7d32'][Math.floor(Math.random() * 5)]
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+    }
+
+    function renderBoard() {
+      gridEl.innerHTML = '';
+      cards.forEach(card => {
+        const cardEl = document.createElement('div');
+        cardEl.className = 'card';
+        
+        if (card.status === 'flipped') {
+          cardEl.className += ' flipped';
+          cardEl.innerText = card.emoji;
+        } else if (card.status === 'matched') {
+          cardEl.className += ' matched';
+          cardEl.innerText = card.emoji;
+        } else {
+          cardEl.innerText = '❓'; // Card back side
+        }
+        
+        cardEl.addEventListener('click', () => cardClick(card));
+        gridEl.appendChild(cardEl);
       });
     }
 
-    function initGame() {
-      items = [];
-      score = 0;
-      scoreEl.innerText = score;
-      player.x = canvas.width / 2 - 40;
-      gameActive = true;
-      startScreen.style.display = 'none';
-      gameOverScreen.style.display = 'none';
-      requestAnimationFrame(gameLoop);
+    function cardClick(card) {
+      if (!gameActive || lockBoard || card.status !== 'hidden') return;
+
+      card.status = 'flipped';
+      flippedCards.push(card);
+      renderBoard();
+
+      if (flippedCards.length === 2) {
+        flips++;
+        flipsEl.innerText = flips;
+        checkMatch();
+      }
+    }
+
+    function checkMatch() {
+      lockBoard = true;
+      const [card1, card2] = flippedCards;
+
+      if (card1.emoji === card2.emoji) {
+        card1.status = 'matched';
+        card2.status = 'matched';
+        matches++;
+        matchesEl.innerText = matches;
+        flippedCards = [];
+        lockBoard = false;
+        renderBoard();
+        
+        if (matches === 8) {
+          setTimeout(triggerGameOver, 300);
+        }
+      } else {
+        // Not a match: flip back after 1 second
+        setTimeout(() => {
+          card1.status = 'hidden';
+          card2.status = 'hidden';
+          flippedCards = [];
+          lockBoard = false;
+          renderBoard();
+        }, 1000);
+      }
     }
 
     function triggerGameOver() {
       gameActive = false;
-      finalScoreEl.innerText = score;
+      finalFlipsEl.innerText = flips;
       gameOverScreen.style.display = 'flex';
-      if (score > bestScore) {
-        bestScore = score;
-        bestEl.innerText = bestScore;
-        localStorage.setItem('best_Memory_Cards_Trainer', bestScore);
-      }
-    }
-
-    function gameLoop() {
-      if (!gameActive) return;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
-        player.x -= player.speed;
-      }
-      if (keys['ArrowRight'] || keys['d'] || keys['D']) {
-        player.x += player.speed;
-      }
-      
-      if (player.x < 0) player.x = 0;
-      if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
-
-      ctx.fillStyle = player.color;
-      ctx.beginPath();
-      ctx.roundRect ? ctx.roundRect(player.x, player.y, player.width, player.height, 4) : ctx.rect(player.x, player.y, player.width, player.height);
-      ctx.fill();
-
-      spawnTimer++;
-      if (spawnTimer > Math.max(12 - score / 150, 4)) {
-        spawnItem();
-        spawnTimer = 0;
-      }
-
-      for (let i = items.length - 1; i >= 0; i--) {
-        const item = items[i];
-        item.y += item.speed;
-
-        const closestX = Math.max(player.x, Math.min(item.x, player.x + player.width));
-        const closestY = Math.max(player.y, Math.min(item.y, player.y + player.height));
-        const distanceX = item.x - closestX;
-        const distanceY = item.y - closestY;
-        const distanceSquared = (distanceX * distanceX) + (distanceY * distanceY);
-
-        if (distanceSquared < (item.radius * item.radius)) {
-          triggerGameOver();
-          return;
-        }
-
-        if (item.y > canvas.height + item.radius) {
-          items.splice(i, 1);
-          score += 10;
-          scoreEl.innerText = score;
-          continue;
-        }
-
-        ctx.fillStyle = item.color;
-        ctx.beginPath();
-        ctx.arc(item.x, item.y, item.radius, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      requestAnimationFrame(gameLoop);
     }
 
     startBtn.addEventListener('click', initGame);

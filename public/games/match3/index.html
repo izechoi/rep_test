@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Neon Match 3 Jewels</title>
+  <title>Cyber Match-3</title>
   <style>
     body {
       margin: 0;
@@ -19,7 +19,7 @@
     }
     h2 {
       margin: 0 0 10px;
-      color: #6200ea;
+      color: #0076ff;
       font-weight: 800;
     }
     .info {
@@ -30,207 +30,313 @@
       font-weight: 700;
       color: #575e6a;
     }
-    canvas {
-      background: #ffffff;
-      border: 3px solid #6200ea;
+    .grid-container {
+      position: relative;
+      background: white;
+      padding: 10px;
       border-radius: 16px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+      border: 3px solid #0076ff;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(7, 45px);
+      grid-template-rows: repeat(7, 45px);
+      gap: 3px;
+      background: #eef2f7;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .tile {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.15s, transform 0.1s;
+      border-radius: 6px;
+      background: white;
+      border: 1px solid rgba(0,0,0,0.03);
+    }
+    .tile.selected {
+      background-color: #bbdefb;
+      transform: scale(0.9);
+      box-shadow: 0 0 8px rgba(0, 118, 255, 0.4);
+    }
+    .tile:active {
+      transform: scale(0.95);
     }
     .screen {
       position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
       background: rgba(255, 255, 255, 0.98);
       border: 1px solid rgba(0,0,0,0.06);
-      padding: 30px;
+      padding: 25px;
       border-radius: 16px;
       text-align: center;
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 15px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.12);
       width: 80%;
-      max-width: 320px;
+      max-width: 260px;
+      z-index: 10;
     }
     button {
-      background: #6200ea;
+      background: #0076ff;
       color: white;
       border: none;
-      padding: 12px 24px;
-      border-radius: 10px;
-      font-size: 1rem;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 0.95rem;
       font-weight: bold;
       cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
     }
     button:hover {
-      transform: scale(1.04);
+      transform: scale(1.03);
     }
     .desc {
       color: #8d949e;
       font-size: 0.85rem;
       margin-top: 15px;
       font-weight: 500;
+      text-align: center;
+      max-width: 320px;
+    }
+    @media (max-width: 480px) {
+      body {
+        padding: 10px;
+      }
+      h2 {
+        font-size: 1.3rem;
+      }
+      .grid {
+        grid-template-columns: repeat(7, 38px);
+        grid-template-rows: repeat(7, 38px);
+      }
+      .tile {
+        font-size: 1.4rem;
+      }
+      .desc {
+        font-size: 0.75rem;
+      }
     }
   </style>
 </head>
 <body>
-  <h2>Neon Match 3 Jewels</h2>
+  <h2>Cyber Match-3</h2>
   <div class="info">
     <div>Score: <span id="score">0</span></div>
-    <div>Best: <span id="best">0</span></div>
+    <div>Moves: <span id="moves">25</span></div>
   </div>
-  <div style="position: relative; display: flex; align-items: center; justify-content: center;">
-    <canvas id="gameCanvas" width="440" height="330"></canvas>
-    
+
+  <div class="grid-container">
+    <div class="grid" id="grid"></div>
+
     <div class="screen" id="startScreen">
-      <h3 style="margin:0; font-size: 1.15rem;">Dodge the Spheres</h3>
-      <p style="margin:0; font-size:0.85rem; color:#575e6a; line-height:1.5;">Move your paddle left and right using the mouse or WASD/Arrow keys.</p>
+      <h3 style="margin:0; font-size:1.1rem; color:#0076ff;">Fruit Matcher</h3>
+      <p style="margin:0; font-size:0.8rem; color:#575e6a; line-height:1.5;">Click two adjacent fruits to swap them. Match 3 or more in a row/column to score!</p>
       <button id="startBtn">START</button>
     </div>
 
     <div class="screen" id="gameOverScreen" style="display: none;">
-      <h3 style="color: #d81b60; margin:0; font-size:1.4rem; font-weight:800;">GAME OVER</h3>
+      <h3 style="color: #d81b60; margin:0; font-size:1.3rem; font-weight:800;">GAME OVER</h3>
       <p style="margin:0; font-weight:600;">Final Score: <span id="finalScore">0</span></p>
       <button id="restartBtn">Play Again</button>
     </div>
   </div>
-  <div class="desc">Dodge falling items! Survival score adds points.</div>
+
+  <div class="desc">Score as high as possible before moves run out!</div>
 
   <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
+    const gridEl = document.getElementById('grid');
     const scoreEl = document.getElementById('score');
-    const bestEl = document.getElementById('best');
+    const movesEl = document.getElementById('moves');
     const finalScoreEl = document.getElementById('finalScore');
     const startScreen = document.getElementById('startScreen');
     const gameOverScreen = document.getElementById('gameOverScreen');
     const startBtn = document.getElementById('startBtn');
     const restartBtn = document.getElementById('restartBtn');
 
-    let gameActive = false;
+    const SIZE = 7; // 7x7 grid
+    const ITEMS = ['🍎', '🍌', '🍇', '🍊', '🍓', '🥑'];
+    let grid = [];
     let score = 0;
-    let bestScore = parseInt(localStorage.getItem('best_Neon_Match_3_Jewels')) || 0;
-    bestEl.innerText = bestScore;
-
-    const player = {
-      x: canvas.width / 2 - 40,
-      y: canvas.height - 25,
-      width: 80,
-      height: 12,
-      speed: 8,
-      color: '#6200ea'
-    };
-
-    let items = [];
-    let spawnTimer = 0;
-    let keys = {};
-
-    window.addEventListener('keydown', (e) => {
-      if([32, 37, 39, 38, 40].includes(e.keyCode)) e.preventDefault();
-      keys[e.key] = true;
-    });
-    window.addEventListener('keyup', (e) => {
-      keys[e.key] = false;
-    });
-    
-    canvas.addEventListener('mousemove', (e) => {
-      if (!gameActive) return;
-      const rect = canvas.getBoundingClientRect();
-      const root = document.documentElement;
-      const mouseX = e.clientX - rect.left - root.scrollLeft;
-      player.x = mouseX - player.width / 2;
-      
-      if (player.x < 0) player.x = 0;
-      if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
-    });
-
-    function spawnItem() {
-      const size = Math.random() * 12 + 8;
-      items.push({
-        x: Math.random() * (canvas.width - size * 2) + size,
-        y: -size,
-        radius: size,
-        speed: Math.random() * 3 + 2.5 + (score / 300),
-        color: ['#d81b60', '#e65100', '#0076ff', '#6200ea', '#2e7d32'][Math.floor(Math.random() * 5)]
-      });
-    }
+    let moves = 25;
+    let gameActive = false;
+    let selectedTile = null;
 
     function initGame() {
-      items = [];
       score = 0;
+      moves = 25;
       scoreEl.innerText = score;
-      player.x = canvas.width / 2 - 40;
+      movesEl.innerText = moves;
       gameActive = true;
+      selectedTile = null;
       startScreen.style.display = 'none';
       gameOverScreen.style.display = 'none';
-      requestAnimationFrame(gameLoop);
+      
+      // Generate initial board without initial matches
+      do {
+        generateBoard();
+      } while (checkMatches().length > 0);
+      
+      renderBoard();
+    }
+
+    function generateBoard() {
+      grid = [];
+      for (let r = 0; r < SIZE; r++) {
+        grid[r] = [];
+        for (let c = 0; c < SIZE; c++) {
+          grid[r][c] = ITEMS[Math.floor(Math.random() * ITEMS.length)];
+        }
+      }
+    }
+
+    function renderBoard() {
+      gridEl.innerHTML = '';
+      for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+          const tile = document.createElement('div');
+          tile.className = 'tile';
+          tile.dataset.row = r;
+          tile.dataset.col = c;
+          tile.innerText = grid[r][c];
+          
+          if (selectedTile && selectedTile.r === r && selectedTile.c === c) {
+            tile.className += ' selected';
+          }
+
+          tile.addEventListener('click', () => tileClick(r, c));
+          gridEl.appendChild(tile);
+        }
+      }
+    }
+
+    function tileClick(r, c) {
+      if (!gameActive) return;
+
+      if (!selectedTile) {
+        selectedTile = { r, c };
+        renderBoard();
+      } else {
+        const dR = Math.abs(selectedTile.r - r);
+        const dC = Math.abs(selectedTile.c - c);
+        
+        // Check adjacency
+        if ((dR === 1 && dC === 0) || (dR === 0 && dC === 1)) {
+          // Swap
+          const temp = grid[selectedTile.r][selectedTile.c];
+          grid[selectedTile.r][selectedTile.c] = grid[r][c];
+          grid[r][c] = temp;
+          
+          // Verify match
+          const matches = checkMatches();
+          if (matches.length > 0) {
+            moves--;
+            movesEl.innerText = moves;
+            handleMatches(matches);
+          } else {
+            // Undo swap if no match
+            const undo = grid[selectedTile.r][selectedTile.c];
+            grid[selectedTile.r][selectedTile.c] = grid[r][c];
+            grid[r][c] = undo;
+          }
+        }
+        selectedTile = null;
+        renderBoard();
+        
+        if (moves <= 0) {
+          triggerGameOver();
+        }
+      }
+    }
+
+    function checkMatches() {
+      let matches = [];
+      
+      // Horizontal check
+      for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE - 2; c++) {
+          const t1 = grid[r][c];
+          const t2 = grid[r][c+1];
+          const t3 = grid[r][c+2];
+          if (t1 && t1 === t2 && t2 === t3) {
+            matches.push({ r, c });
+            matches.push({ r, c: c + 1 });
+            matches.push({ r, c: c + 2 });
+          }
+        }
+      }
+
+      // Vertical check
+      for (let c = 0; c < SIZE; c++) {
+        for (let r = 0; r < SIZE - 2; r++) {
+          const t1 = grid[r][c];
+          const t2 = grid[r+1][c];
+          const t3 = grid[r+2][c];
+          if (t1 && t1 === t2 && t2 === t3) {
+            matches.push({ r, c });
+            matches.push({ r: r + 1, c });
+            matches.push({ r: r + 2, c });
+          }
+        }
+      }
+
+      return matches;
+    }
+
+    function handleMatches(matches) {
+      // Remove matches (set null)
+      matches.forEach(m => {
+        grid[m.r][m.c] = null;
+      });
+
+      // Calculate score (10 pts per block)
+      const uniqueMatches = Array.from(new Set(matches.map(JSON.stringify))).map(JSON.parse);
+      score += uniqueMatches.length * 10;
+      scoreEl.innerText = score;
+
+      // Drop blocks
+      for (let c = 0; c < SIZE; c++) {
+        for (let r = SIZE - 1; r >= 0; r--) {
+          if (grid[r][c] === null) {
+            // Find non-null above
+            let found = false;
+            for (let tr = r - 1; tr >= 0; tr--) {
+              if (grid[tr][c] !== null) {
+                grid[r][c] = grid[tr][c];
+                grid[tr][c] = null;
+                found = true;
+                break;
+              }
+            }
+            // Spawn new if none found above
+            if (!found) {
+              grid[r][c] = ITEMS[Math.floor(Math.random() * ITEMS.length)];
+            }
+          }
+        }
+      }
+
+      renderBoard();
+
+      // Check combo cascade
+      const nextMatches = checkMatches();
+      if (nextMatches.length > 0) {
+        setTimeout(() => handleMatches(nextMatches), 250);
+      }
     }
 
     function triggerGameOver() {
       gameActive = false;
       finalScoreEl.innerText = score;
       gameOverScreen.style.display = 'flex';
-      if (score > bestScore) {
-        bestScore = score;
-        bestEl.innerText = bestScore;
-        localStorage.setItem('best_Neon_Match_3_Jewels', bestScore);
-      }
-    }
-
-    function gameLoop() {
-      if (!gameActive) return;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
-        player.x -= player.speed;
-      }
-      if (keys['ArrowRight'] || keys['d'] || keys['D']) {
-        player.x += player.speed;
-      }
-      
-      if (player.x < 0) player.x = 0;
-      if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
-
-      ctx.fillStyle = player.color;
-      ctx.beginPath();
-      ctx.roundRect ? ctx.roundRect(player.x, player.y, player.width, player.height, 4) : ctx.rect(player.x, player.y, player.width, player.height);
-      ctx.fill();
-
-      spawnTimer++;
-      if (spawnTimer > Math.max(12 - score / 150, 4)) {
-        spawnItem();
-        spawnTimer = 0;
-      }
-
-      for (let i = items.length - 1; i >= 0; i--) {
-        const item = items[i];
-        item.y += item.speed;
-
-        const closestX = Math.max(player.x, Math.min(item.x, player.x + player.width));
-        const closestY = Math.max(player.y, Math.min(item.y, player.y + player.height));
-        const distanceX = item.x - closestX;
-        const distanceY = item.y - closestY;
-        const distanceSquared = (distanceX * distanceX) + (distanceY * distanceY);
-
-        if (distanceSquared < (item.radius * item.radius)) {
-          triggerGameOver();
-          return;
-        }
-
-        if (item.y > canvas.height + item.radius) {
-          items.splice(i, 1);
-          score += 10;
-          scoreEl.innerText = score;
-          continue;
-        }
-
-        ctx.fillStyle = item.color;
-        ctx.beginPath();
-        ctx.arc(item.x, item.y, item.radius, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      requestAnimationFrame(gameLoop);
     }
 
     startBtn.addEventListener('click', initGame);

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Flappy neon ball</title>
+  <title>Cyber Flappy Ball</title>
   <style>
     body {
       margin: 0;
@@ -31,10 +31,11 @@
       color: #575e6a;
     }
     canvas {
-      background: #ffffff;
+      background: #eef2f7;
       border: 3px solid #d81b60;
       border-radius: 16px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+      cursor: pointer;
     }
     .screen {
       position: absolute;
@@ -49,7 +50,7 @@
       gap: 15px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.08);
       width: 80%;
-      max-width: 320px;
+      max-width: 300px;
     }
     button {
       background: #d81b60;
@@ -60,7 +61,7 @@
       font-size: 1rem;
       font-weight: bold;
       cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
+      transition: transform 0.2s;
     }
     button:hover {
       transform: scale(1.04);
@@ -71,20 +72,36 @@
       margin-top: 15px;
       font-weight: 500;
     }
+    @media (max-width: 480px) {
+      body {
+        padding: 10px;
+      }
+      h2 {
+        font-size: 1.3rem;
+      }
+      canvas {
+        max-width: 90vw;
+        height: auto;
+      }
+      .desc {
+        font-size: 0.75rem;
+      }
+    }
   </style>
 </head>
 <body>
-  <h2>Flappy neon ball</h2>
+  <h2>Cyber Flappy Ball</h2>
   <div class="info">
     <div>Score: <span id="score">0</span></div>
     <div>Best: <span id="best">0</span></div>
   </div>
+  
   <div style="position: relative; display: flex; align-items: center; justify-content: center;">
-    <canvas id="gameCanvas" width="440" height="330"></canvas>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
     
     <div class="screen" id="startScreen">
-      <h3 style="margin:0; font-size: 1.15rem;">Dodge the Spheres</h3>
-      <p style="margin:0; font-size:0.85rem; color:#575e6a; line-height:1.5;">Move your paddle left and right using the mouse or WASD/Arrow keys.</p>
+      <h3 style="margin:0; font-size: 1.15rem;">Flappy Ball</h3>
+      <p style="margin:0; font-size:0.85rem; color:#575e6a; line-height:1.5;">Click screen, tap, or press SPACE to jump and flap through pipes.</p>
       <button id="startBtn">START</button>
     </div>
 
@@ -94,7 +111,8 @@
       <button id="restartBtn">Play Again</button>
     </div>
   </div>
-  <div class="desc">Dodge falling items! Survival score adds points.</div>
+
+  <div class="desc">Tap/Click or Space to jump! Pass between obstacles.</div>
 
   <script>
     const canvas = document.getElementById('gameCanvas');
@@ -109,61 +127,70 @@
 
     let gameActive = false;
     let score = 0;
-    let bestScore = parseInt(localStorage.getItem('best_Flappy_neon_ball')) || 0;
+    let bestScore = parseInt(localStorage.getItem('best_flappy_ball')) || 0;
     bestEl.innerText = bestScore;
 
-    const player = {
-      x: canvas.width / 2 - 40,
-      y: canvas.height - 25,
-      width: 80,
-      height: 12,
-      speed: 8,
+    // Physics
+    const ball = {
+      x: 100,
+      y: 200,
+      radius: 12,
+      gravity: 0.4,
+      velocity: 0,
+      jump: -6.5,
       color: '#d81b60'
     };
 
-    let items = [];
+    let pipes = [];
+    const pipeWidth = 50;
+    const pipeGap = 130;
+    const pipeSpeed = 2;
     let spawnTimer = 0;
-    let keys = {};
-
-    window.addEventListener('keydown', (e) => {
-      if([32, 37, 39, 38, 40].includes(e.keyCode)) e.preventDefault();
-      keys[e.key] = true;
-    });
-    window.addEventListener('keyup', (e) => {
-      keys[e.key] = false;
-    });
-    
-    canvas.addEventListener('mousemove', (e) => {
-      if (!gameActive) return;
-      const rect = canvas.getBoundingClientRect();
-      const root = document.documentElement;
-      const mouseX = e.clientX - rect.left - root.scrollLeft;
-      player.x = mouseX - player.width / 2;
-      
-      if (player.x < 0) player.x = 0;
-      if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
-    });
-
-    function spawnItem() {
-      const size = Math.random() * 12 + 8;
-      items.push({
-        x: Math.random() * (canvas.width - size * 2) + size,
-        y: -size,
-        radius: size,
-        speed: Math.random() * 3 + 2.5 + (score / 300),
-        color: ['#d81b60', '#e65100', '#0076ff', '#6200ea', '#2e7d32'][Math.floor(Math.random() * 5)]
-      });
-    }
 
     function initGame() {
-      items = [];
       score = 0;
       scoreEl.innerText = score;
-      player.x = canvas.width / 2 - 40;
+      ball.y = 200;
+      ball.velocity = 0;
+      pipes = [];
+      spawnTimer = 0;
       gameActive = true;
       startScreen.style.display = 'none';
       gameOverScreen.style.display = 'none';
       requestAnimationFrame(gameLoop);
+    }
+
+    function jump() {
+      if (gameActive) {
+        ball.velocity = ball.jump;
+      }
+    }
+
+    // Input bindings
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        jump();
+      }
+    });
+    canvas.addEventListener('mousedown', jump);
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      jump();
+    });
+
+    function spawnPipe() {
+      // Random gap Y position
+      const minHeight = 50;
+      const maxHeight = canvas.height - pipeGap - minHeight;
+      const topHeight = Math.floor(Math.random() * (maxHeight - minHeight)) + minHeight;
+      
+      pipes.push({
+        x: canvas.width,
+        topHeight: topHeight,
+        bottomHeight: canvas.height - topHeight - pipeGap,
+        passed: false
+      });
     }
 
     function triggerGameOver() {
@@ -173,7 +200,7 @@
       if (score > bestScore) {
         bestScore = score;
         bestEl.innerText = bestScore;
-        localStorage.setItem('best_Flappy_neon_ball', bestScore);
+        localStorage.setItem('best_flappy_ball', bestScore);
       }
     }
 
@@ -181,53 +208,66 @@
       if (!gameActive) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
-        player.x -= player.speed;
-      }
-      if (keys['ArrowRight'] || keys['d'] || keys['D']) {
-        player.x += player.speed;
-      }
-      
-      if (player.x < 0) player.x = 0;
-      if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
+      // Gravity math
+      ball.velocity += ball.gravity;
+      ball.y += ball.velocity;
 
-      ctx.fillStyle = player.color;
+      // Draw Ball
+      ctx.fillStyle = ball.color;
       ctx.beginPath();
-      ctx.roundRect ? ctx.roundRect(player.x, player.y, player.width, player.height, 4) : ctx.rect(player.x, player.y, player.width, player.height);
+      ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
       ctx.fill();
 
+      // Floor & Ceiling check
+      if (ball.y + ball.radius > canvas.height || ball.y - ball.radius < 0) {
+        triggerGameOver();
+        return;
+      }
+
+      // Pipe generator
       spawnTimer++;
-      if (spawnTimer > Math.max(12 - score / 150, 4)) {
-        spawnItem();
+      if (spawnTimer > 90) {
+        spawnPipe();
         spawnTimer = 0;
       }
 
-      for (let i = items.length - 1; i >= 0; i--) {
-        const item = items[i];
-        item.y += item.speed;
+      // Render pipes & handle check
+      for (let i = pipes.length - 1; i >= 0; i--) {
+        const p = pipes[i];
+        p.x -= pipeSpeed;
 
-        const closestX = Math.max(player.x, Math.min(item.x, player.x + player.width));
-        const closestY = Math.max(player.y, Math.min(item.y, player.y + player.height));
-        const distanceX = item.x - closestX;
-        const distanceY = item.y - closestY;
-        const distanceSquared = (distanceX * distanceX) + (distanceY * distanceY);
+        // Draw top pipe
+        ctx.fillStyle = '#2e7d32';
+        ctx.beginPath();
+        ctx.rect(p.x, 0, pipeWidth, p.topHeight);
+        ctx.fill();
 
-        if (distanceSquared < (item.radius * item.radius)) {
+        // Draw bottom pipe
+        ctx.beginPath();
+        ctx.rect(p.x, canvas.height - p.bottomHeight, pipeWidth, p.bottomHeight);
+        ctx.fill();
+
+        // Collision test
+        if (
+          ball.x + ball.radius > p.x &&
+          ball.x - ball.radius < p.x + pipeWidth &&
+          (ball.y - ball.radius < p.topHeight || ball.y + ball.radius > canvas.height - p.bottomHeight)
+        ) {
           triggerGameOver();
           return;
         }
 
-        if (item.y > canvas.height + item.radius) {
-          items.splice(i, 1);
+        // Add score
+        if (!p.passed && ball.x > p.x + pipeWidth) {
           score += 10;
           scoreEl.innerText = score;
-          continue;
+          p.passed = true;
         }
 
-        ctx.fillStyle = item.color;
-        ctx.beginPath();
-        ctx.arc(item.x, item.y, item.radius, 0, Math.PI * 2);
-        ctx.fill();
+        // Clean memory
+        if (p.x + pipeWidth < 0) {
+          pipes.splice(i, 1);
+        }
       }
 
       requestAnimationFrame(gameLoop);

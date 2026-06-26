@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Neon Ludo Arena</title>
+  <title>Ludo Dice Race</title>
   <style>
     body {
       margin: 0;
@@ -19,7 +19,7 @@
     }
     h2 {
       margin: 0 0 10px;
-      color: #ffeb3b;
+      color: #e53935;
       font-weight: 800;
     }
     .info {
@@ -30,209 +30,386 @@
       font-weight: 700;
       color: #575e6a;
     }
-    canvas {
-      background: #ffffff;
-      border: 3px solid #ffeb3b;
+    .game-container {
+      position: relative;
+      background: white;
+      padding: 20px;
       border-radius: 16px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+      border: 3px solid #e53935;
+      width: 90%;
+      max-width: 400px;
+    }
+    .track {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 12px;
+      position: relative;
+      overflow-x: auto;
+      padding-bottom: 8px;
+    }
+    .cell {
+      width: 24px;
+      height: 36px;
+      background: #e0e0e0;
+      border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+      font-weight: bold;
+      color: #8d949e;
+      flex-shrink: 0;
+      position: relative;
+    }
+    .cell.special-forward {
+      background: #c8e6c9;
+      color: #2e7d32;
+    }
+    .cell.special-backward {
+      background: #ffcdd2;
+      color: #c62828;
+    }
+    .cell.goal {
+      background: #ffd54f;
+      color: #f57f17;
+      width: 32px;
+    }
+    .token {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 2px solid white;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+    .token.player {
+      background: #1e88e5;
+      top: 4px;
+    }
+    .token.ai {
+      background: #e53935;
+      bottom: 4px;
+    }
+    .dice-area {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      margin-top: 20px;
+      padding: 10px;
+      background: #f8f9fa;
+      border-radius: 12px;
+    }
+    .dice {
+      width: 50px;
+      height: 50px;
+      background: white;
+      border: 2px solid #575e6a;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      font-weight: 800;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      user-select: none;
     }
     .screen {
       position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
       background: rgba(255, 255, 255, 0.98);
       border: 1px solid rgba(0,0,0,0.06);
-      padding: 30px;
+      padding: 25px;
       border-radius: 16px;
       text-align: center;
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 15px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.12);
       width: 80%;
-      max-width: 320px;
+      max-width: 280px;
+      z-index: 10;
     }
     button {
-      background: #ffeb3b;
+      background: #e53935;
       color: white;
       border: none;
-      padding: 12px 24px;
-      border-radius: 10px;
-      font-size: 1rem;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 0.95rem;
       font-weight: bold;
       cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
     }
     button:hover {
-      transform: scale(1.04);
+      transform: scale(1.03);
+    }
+    .status-msg {
+      margin-top: 15px;
+      font-weight: bold;
+      color: #575e6a;
+      text-align: center;
+      font-size: 0.9rem;
+      height: 20px;
     }
     .desc {
       color: #8d949e;
       font-size: 0.85rem;
       margin-top: 15px;
       font-weight: 500;
+      text-align: center;
+    }
+    @media (max-width: 480px) {
+      body {
+        padding: 10px;
+      }
+      h2 {
+        font-size: 1.3rem;
+      }
+      .cell {
+        width: 20px;
+        height: 32px;
+        font-size: 0.55rem;
+      }
+      .desc {
+        font-size: 0.75rem;
+      }
     }
   </style>
 </head>
 <body>
-  <h2>Neon Ludo Arena</h2>
+  <h2>Ludo Dice Race</h2>
   <div class="info">
-    <div>Score: <span id="score">0</span></div>
-    <div>Best: <span id="best">0</span></div>
+    <div>Your Pos: <span id="pPos">0</span>/15</div>
+    <div>AI Pos: <span id="aPos">0</span>/15</div>
   </div>
-  <div style="position: relative; display: flex; align-items: center; justify-content: center;">
-    <canvas id="gameCanvas" width="440" height="330"></canvas>
-    
+
+  <div class="game-container">
+    {/* Player Track */}
+    <h4 style="margin: 0 0 6px; color:#1e88e5;">Your Track (Blue)</h4>
+    <div class="track" id="pTrack"></div>
+
+    {/* AI Track */}
+    <h4 style="margin: 8px 0 6px; color:#e53935;">AI Track (Red)</h4>
+    <div class="track" id="aTrack"></div>
+
+    <div class="dice-area">
+      <div class="dice" id="diceBox">?</div>
+      <button id="rollBtn">Roll Dice</button>
+    </div>
+
+    <div class="status-msg" id="statusMsg">Your Turn!</div>
+
+    {/* Screen Overlays */}
     <div class="screen" id="startScreen">
-      <h3 style="margin:0; font-size: 1.15rem;">Dodge the Spheres</h3>
-      <p style="margin:0; font-size:0.85rem; color:#575e6a; line-height:1.5;">Move your paddle left and right using the mouse or WASD/Arrow keys.</p>
+      <h3 style="margin:0; font-size:1.1rem; color:#e53935;">Ludo Dice Race</h3>
+      <p style="margin:0; font-size:0.8rem; color:#575e6a; line-height:1.5;">First to reach the Goal (15) wins! Green tiles send you forward (+2), Red tiles pull you backward (-2).</p>
       <button id="startBtn">START</button>
     </div>
 
     <div class="screen" id="gameOverScreen" style="display: none;">
-      <h3 style="color: #d81b60; margin:0; font-size:1.4rem; font-weight:800;">GAME OVER</h3>
-      <p style="margin:0; font-weight:600;">Final Score: <span id="finalScore">0</span></p>
+      <h3 style="color: #d81b60; margin:0; font-size:1.3rem; font-weight:800;" id="endTitle">YOU WON!</h3>
       <button id="restartBtn">Play Again</button>
     </div>
   </div>
-  <div class="desc">Dodge falling items! Survival score adds points.</div>
+
+  <div class="desc">Roll the dice to move forward. Avoid trap tiles!</div>
 
   <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    const scoreEl = document.getElementById('score');
-    const bestEl = document.getElementById('best');
-    const finalScoreEl = document.getElementById('finalScore');
+    const pTrack = document.getElementById('pTrack');
+    const aTrack = document.getElementById('aTrack');
+    const rollBtn = document.getElementById('rollBtn');
+    const diceBox = document.getElementById('diceBox');
+    const statusMsg = document.getElementById('statusMsg');
+    const pPosEl = document.getElementById('pPos');
+    const aPosEl = document.getElementById('aPos');
+    
     const startScreen = document.getElementById('startScreen');
     const gameOverScreen = document.getElementById('gameOverScreen');
     const startBtn = document.getElementById('startBtn');
     const restartBtn = document.getElementById('restartBtn');
+    const endTitle = document.getElementById('endTitle');
 
+    const TRACK_LENGTH = 15; // 0 to 15 (15 is goal)
+    let pPos = 0;
+    let aPos = 0;
+    let turn = 'player'; // 'player' or 'ai'
     let gameActive = false;
-    let score = 0;
-    let bestScore = parseInt(localStorage.getItem('best_Neon_Ludo_Arena')) || 0;
-    bestEl.innerText = bestScore;
 
-    const player = {
-      x: canvas.width / 2 - 40,
-      y: canvas.height - 25,
-      width: 80,
-      height: 12,
-      speed: 8,
-      color: '#ffeb3b'
-    };
+    // Special tiles
+    const forwards = [3, 9];
+    const backwards = [6, 12];
 
-    let items = [];
-    let spawnTimer = 0;
-    let keys = {};
+    function createTracks() {
+      pTrack.innerHTML = '';
+      aTrack.innerHTML = '';
+      for (let i = 0; i <= TRACK_LENGTH; i++) {
+        const pCell = document.createElement('div');
+        const aCell = document.createElement('div');
+        
+        pCell.className = 'cell';
+        aCell.className = 'cell';
 
-    window.addEventListener('keydown', (e) => {
-      if([32, 37, 39, 38, 40].includes(e.keyCode)) e.preventDefault();
-      keys[e.key] = true;
-    });
-    window.addEventListener('keyup', (e) => {
-      keys[e.key] = false;
-    });
-    
-    canvas.addEventListener('mousemove', (e) => {
-      if (!gameActive) return;
-      const rect = canvas.getBoundingClientRect();
-      const root = document.documentElement;
-      const mouseX = e.clientX - rect.left - root.scrollLeft;
-      player.x = mouseX - player.width / 2;
-      
-      if (player.x < 0) player.x = 0;
-      if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
-    });
+        if (i === 0) {
+          pCell.innerText = 'S';
+          aCell.innerText = 'S';
+        } else if (i === TRACK_LENGTH) {
+          pCell.className += ' goal';
+          aCell.className += ' goal';
+          pCell.innerText = 'Goal';
+          aCell.innerText = 'Goal';
+        } else if (forwards.includes(i)) {
+          pCell.className += ' special-forward';
+          aCell.className += ' special-forward';
+          pCell.innerText = '+2';
+          aCell.innerText = '+2';
+        } else if (backwards.includes(i)) {
+          pCell.className += ' special-backward';
+          aCell.className += ' special-backward';
+          pCell.innerText = '-2';
+          aCell.innerText = '-2';
+        } else {
+          pCell.innerText = i;
+          aCell.innerText = i;
+        }
 
-    function spawnItem() {
-      const size = Math.random() * 12 + 8;
-      items.push({
-        x: Math.random() * (canvas.width - size * 2) + size,
-        y: -size,
-        radius: size,
-        speed: Math.random() * 3 + 2.5 + (score / 300),
-        color: ['#d81b60', '#e65100', '#0076ff', '#6200ea', '#2e7d32'][Math.floor(Math.random() * 5)]
-      });
+        // Draw tokens inside
+        if (i === pPos) {
+          const t = document.createElement('div');
+          t.className = 'token player';
+          pCell.appendChild(t);
+        }
+        if (i === aPos) {
+          const t = document.createElement('div');
+          t.className = 'token ai';
+          aCell.appendChild(t);
+        }
+
+        pTrack.appendChild(pCell);
+        aTrack.appendChild(aCell);
+      }
     }
 
     function initGame() {
-      items = [];
-      score = 0;
-      scoreEl.innerText = score;
-      player.x = canvas.width / 2 - 40;
+      pPos = 0;
+      aPos = 0;
+      pPosEl.innerText = pPos;
+      aPosEl.innerText = aPos;
+      turn = 'player';
+      statusMsg.innerText = 'Your Turn!';
+      diceBox.innerText = '?';
       gameActive = true;
+      rollBtn.disabled = false;
       startScreen.style.display = 'none';
       gameOverScreen.style.display = 'none';
-      requestAnimationFrame(gameLoop);
+      createTracks();
     }
 
-    function triggerGameOver() {
-      gameActive = false;
-      finalScoreEl.innerText = score;
-      gameOverScreen.style.display = 'flex';
-      if (score > bestScore) {
-        bestScore = score;
-        bestEl.innerText = bestScore;
-        localStorage.setItem('best_Neon_Ludo_Arena', bestScore);
-      }
-    }
-
-    function gameLoop() {
-      if (!gameActive) return;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
-        player.x -= player.speed;
-      }
-      if (keys['ArrowRight'] || keys['d'] || keys['D']) {
-        player.x += player.speed;
-      }
+    function rollDice() {
+      if (!gameActive || turn !== 'player') return;
       
-      if (player.x < 0) player.x = 0;
-      if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
+      rollBtn.disabled = true;
+      let count = 0;
+      // Rolling animation
+      const interval = setInterval(() => {
+        diceBox.innerText = Math.floor(Math.random() * 6) + 1;
+        count++;
+        if (count > 8) {
+          clearInterval(interval);
+          const roll = Math.floor(Math.random() * 6) + 1;
+          diceBox.innerText = roll;
+          moveToken('player', roll);
+        }
+      }, 50);
+    }
 
-      ctx.fillStyle = player.color;
-      ctx.beginPath();
-      ctx.roundRect ? ctx.roundRect(player.x, player.y, player.width, player.height, 4) : ctx.rect(player.x, player.y, player.width, player.height);
-      ctx.fill();
+    function moveToken(entity, steps) {
+      if (entity === 'player') {
+        pPos += steps;
+        if (pPos >= TRACK_LENGTH) {
+          pPos = TRACK_LENGTH;
+          createTracks();
+          pPosEl.innerText = pPos;
+          triggerGameOver(true);
+          return;
+        }
+        
+        // Special events check
+        if (forwards.includes(pPos)) {
+          pPos += 2;
+          statusMsg.innerText = `Rolled ${steps}! Boosted +2!`;
+        } else if (backwards.includes(pPos)) {
+          pPos -= 2;
+          statusMsg.innerText = `Rolled ${steps}! Slipped -2!`;
+        } else {
+          statusMsg.innerText = `Rolled ${steps}!`;
+        }
+        
+        pPosEl.innerText = pPos;
+        createTracks();
 
-      spawnTimer++;
-      if (spawnTimer > Math.max(12 - score / 150, 4)) {
-        spawnItem();
-        spawnTimer = 0;
-      }
-
-      for (let i = items.length - 1; i >= 0; i--) {
-        const item = items[i];
-        item.y += item.speed;
-
-        const closestX = Math.max(player.x, Math.min(item.x, player.x + player.width));
-        const closestY = Math.max(player.y, Math.min(item.y, player.y + player.height));
-        const distanceX = item.x - closestX;
-        const distanceY = item.y - closestY;
-        const distanceSquared = (distanceX * distanceX) + (distanceY * distanceY);
-
-        if (distanceSquared < (item.radius * item.radius)) {
-          triggerGameOver();
+        turn = 'ai';
+        setTimeout(aiTurn, 1000);
+      } else {
+        aPos += steps;
+        if (aPos >= TRACK_LENGTH) {
+          aPos = TRACK_LENGTH;
+          createTracks();
+          aPosEl.innerText = aPos;
+          triggerGameOver(false);
           return;
         }
 
-        if (item.y > canvas.height + item.radius) {
-          items.splice(i, 1);
-          score += 10;
-          scoreEl.innerText = score;
-          continue;
+        if (forwards.includes(aPos)) {
+          aPos += 2;
+          statusMsg.innerText = `AI rolled ${steps}! Boosted +2!`;
+        } else if (backwards.includes(aPos)) {
+          aPos -= 2;
+          statusMsg.innerText = `AI rolled ${steps}! Slipped -2!`;
+        } else {
+          statusMsg.innerText = `AI rolled ${steps}!`;
         }
 
-        ctx.fillStyle = item.color;
-        ctx.beginPath();
-        ctx.arc(item.x, item.y, item.radius, 0, Math.PI * 2);
-        ctx.fill();
-      }
+        aPosEl.innerText = aPos;
+        createTracks();
 
-      requestAnimationFrame(gameLoop);
+        turn = 'player';
+        rollBtn.disabled = false;
+      }
     }
 
+    function aiTurn() {
+      if (!gameActive) return;
+      statusMsg.innerText = "AI is rolling...";
+      let count = 0;
+      const interval = setInterval(() => {
+        diceBox.innerText = Math.floor(Math.random() * 6) + 1;
+        count++;
+        if (count > 8) {
+          clearInterval(interval);
+          const roll = Math.floor(Math.random() * 6) + 1;
+          diceBox.innerText = roll;
+          moveToken('ai', roll);
+        }
+      }, 50);
+    }
+
+    function triggerGameOver(win) {
+      gameActive = false;
+      if (win) {
+        endTitle.innerText = "🏆 YOU WON!";
+        endTitle.style.color = "#2e7d32";
+      } else {
+        endTitle.innerText = "🤖 AI WON!";
+        endTitle.style.color = "#d81b60";
+      }
+      gameOverScreen.style.display = 'flex';
+    }
+
+    rollBtn.addEventListener('click', rollDice);
     startBtn.addEventListener('click', initGame);
     restartBtn.addEventListener('click', initGame);
   </script>

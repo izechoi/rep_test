@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cyber Chess Tactical</title>
+  <title>Cyber Chess Puzzle</title>
   <style>
     body {
       margin: 0;
@@ -19,7 +19,7 @@
     }
     h2 {
       margin: 0 0 10px;
-      color: #575e6a;
+      color: #512da8;
       font-weight: 800;
     }
     .info {
@@ -30,37 +30,79 @@
       font-weight: 700;
       color: #575e6a;
     }
-    canvas {
+    .board-container {
+      position: relative;
       background: #ffffff;
-      border: 3px solid #575e6a;
+      padding: 10px;
       border-radius: 16px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+      border: 3px solid #512da8;
+    }
+    .board {
+      display: grid;
+      grid-template-columns: repeat(6, 50px);
+      grid-template-rows: repeat(6, 50px);
+      gap: 2px;
+      background: #e0e0e0;
+    }
+    .square {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      font-weight: bold;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.2s;
+    }
+    /* 체스판 격자 색상 */
+    .square.light {
+      background-color: #f0d9b5;
+    }
+    .square.dark {
+      background-color: #b58863;
+    }
+    /* 이동 가능 위치 하이라이트 */
+    .square.valid {
+      box-shadow: inset 0 0 0 4px #00e676;
+    }
+    .square.valid:hover {
+      background-color: rgba(0, 230, 118, 0.4) !important;
+    }
+    /* 위험 영역 경고 */
+    .square.warning {
+      background-color: #ff5252 !important;
+      color: white;
     }
     .screen {
       position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
       background: rgba(255, 255, 255, 0.98);
       border: 1px solid rgba(0,0,0,0.06);
-      padding: 30px;
+      padding: 25px;
       border-radius: 16px;
       text-align: center;
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 15px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.12);
       width: 80%;
-      max-width: 320px;
+      max-width: 280px;
+      z-index: 10;
     }
     button {
-      background: #575e6a;
+      background: #512da8;
       color: white;
       border: none;
-      padding: 12px 24px;
-      border-radius: 10px;
-      font-size: 1rem;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 0.95rem;
       font-weight: bold;
       cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
+      transition: transform 0.2s;
     }
     button:hover {
       transform: scale(1.04);
@@ -70,35 +112,56 @@
       font-size: 0.85rem;
       margin-top: 15px;
       font-weight: 500;
+      text-align: center;
+      max-width: 320px;
+    }
+    @media (max-width: 480px) {
+      body {
+        padding: 10px;
+      }
+      h2 {
+        font-size: 1.3rem;
+      }
+      .board {
+        grid-template-columns: repeat(6, 42px);
+        grid-template-rows: repeat(6, 42px);
+      }
+      .square {
+        font-size: 1.6rem;
+      }
+      .desc {
+        font-size: 0.75rem;
+      }
     }
   </style>
 </head>
 <body>
-  <h2>Cyber Chess Tactical</h2>
+  <h2>Cyber Chess Puzzle</h2>
   <div class="info">
     <div>Score: <span id="score">0</span></div>
     <div>Best: <span id="best">0</span></div>
   </div>
-  <div style="position: relative; display: flex; align-items: center; justify-content: center;">
-    <canvas id="gameCanvas" width="440" height="330"></canvas>
-    
+  
+  <div class="board-container">
+    <div class="board" id="board"></div>
+
     <div class="screen" id="startScreen">
-      <h3 style="margin:0; font-size: 1.15rem;">Dodge the Spheres</h3>
-      <p style="margin:0; font-size:0.85rem; color:#575e6a; line-height:1.5;">Move your paddle left and right using the mouse or WASD/Arrow keys.</p>
+      <h3 style="margin:0; font-size:1.1rem; color:#512da8;">Knight's Escape</h3>
+      <p style="margin:0; font-size:0.8rem; color:#575e6a; line-height:1.5;">Move your Knight (♘) in L-shape steps to collect targets (🏆) while dodging red danger squares!</p>
       <button id="startBtn">START</button>
     </div>
 
     <div class="screen" id="gameOverScreen" style="display: none;">
-      <h3 style="color: #d81b60; margin:0; font-size:1.4rem; font-weight:800;">GAME OVER</h3>
+      <h3 style="color: #d81b60; margin:0; font-size:1.3rem; font-weight:800;">GAME OVER</h3>
       <p style="margin:0; font-weight:600;">Final Score: <span id="finalScore">0</span></p>
       <button id="restartBtn">Play Again</button>
     </div>
   </div>
-  <div class="desc">Dodge falling items! Survival score adds points.</div>
+
+  <div class="desc">Click green outline squares to move. Avoid red danger zones that activate each turn!</div>
 
   <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
+    const boardEl = document.getElementById('board');
     const scoreEl = document.getElementById('score');
     const bestEl = document.getElementById('best');
     const finalScoreEl = document.getElementById('finalScore');
@@ -109,61 +172,86 @@
 
     let gameActive = false;
     let score = 0;
-    let bestScore = parseInt(localStorage.getItem('best_Cyber_Chess_Tactical')) || 0;
+    let bestScore = parseInt(localStorage.getItem('best_chess_puzzle')) || 0;
     bestEl.innerText = bestScore;
 
-    const player = {
-      x: canvas.width / 2 - 40,
-      y: canvas.height - 25,
-      width: 80,
-      height: 12,
-      speed: 8,
-      color: '#575e6a'
-    };
-
-    let items = [];
-    let spawnTimer = 0;
-    let keys = {};
-
-    window.addEventListener('keydown', (e) => {
-      if([32, 37, 39, 38, 40].includes(e.keyCode)) e.preventDefault();
-      keys[e.key] = true;
-    });
-    window.addEventListener('keyup', (e) => {
-      keys[e.key] = false;
-    });
-    
-    canvas.addEventListener('mousemove', (e) => {
-      if (!gameActive) return;
-      const rect = canvas.getBoundingClientRect();
-      const root = document.documentElement;
-      const mouseX = e.clientX - rect.left - root.scrollLeft;
-      player.x = mouseX - player.width / 2;
-      
-      if (player.x < 0) player.x = 0;
-      if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
-    });
-
-    function spawnItem() {
-      const size = Math.random() * 12 + 8;
-      items.push({
-        x: Math.random() * (canvas.width - size * 2) + size,
-        y: -size,
-        radius: size,
-        speed: Math.random() * 3 + 2.5 + (score / 300),
-        color: ['#d81b60', '#e65100', '#0076ff', '#6200ea', '#2e7d32'][Math.floor(Math.random() * 5)]
-      });
-    }
+    // Player position
+    let knightPos = { r: 5, c: 0 };
+    // Target position
+    let targetPos = { r: 0, c: 5 };
+    // Danger squares
+    let dangerSquares = [];
 
     function initGame() {
-      items = [];
       score = 0;
       scoreEl.innerText = score;
-      player.x = canvas.width / 2 - 40;
+      knightPos = { r: 5, c: 0 };
+      spawnTarget();
+      dangerSquares = [];
       gameActive = true;
       startScreen.style.display = 'none';
       gameOverScreen.style.display = 'none';
-      requestAnimationFrame(gameLoop);
+      renderBoard();
+    }
+
+    function spawnTarget() {
+      let r, c;
+      do {
+        r = Math.floor(Math.random() * 6);
+        c = Math.floor(Math.random() * 6);
+      } while ((r === knightPos.r && c === knightPos.c) || (r === targetPos.r && c === targetPos.c));
+      targetPos = { r, c };
+    }
+
+    function spawnDanger() {
+      dangerSquares = [];
+      // Spawn 2 to 4 random danger tiles based on score
+      const dangerCount = Math.min(2 + Math.floor(score / 50), 6);
+      for (let i = 0; i < dangerCount; i++) {
+        let r, c;
+        let attempts = 0;
+        do {
+          r = Math.floor(Math.random() * 6);
+          c = Math.floor(Math.random() * 6);
+          attempts++;
+        } while (
+          (r === knightPos.r && c === knightPos.c) ||
+          (r === targetPos.r && c === targetPos.c) ||
+          dangerSquares.some(d => d.r === r && d.c === c) && attempts < 20
+        );
+        dangerSquares.push({ r, c });
+      }
+    }
+
+    function isValidKnightMove(fromR, fromC, toR, toC) {
+      const rDiff = Math.abs(fromR - toR);
+      const cDiff = Math.abs(fromC - toC);
+      return (rDiff === 2 && cDiff === 1) || (rDiff === 1 && cDiff === 2);
+    }
+
+    function squareClick(r, c) {
+      if (!gameActive) return;
+
+      if (isValidKnightMove(knightPos.r, knightPos.c, r, c)) {
+        knightPos = { r, c };
+        
+        // Check danger hit
+        if (dangerSquares.some(d => d.r === knightPos.r && d.c === knightPos.c)) {
+          triggerGameOver();
+          return;
+        }
+
+        // Check target collect
+        if (knightPos.r === targetPos.r && knightPos.c === targetPos.c) {
+          score += 10;
+          scoreEl.innerText = score;
+          spawnTarget();
+        }
+
+        // Advance danger turn
+        spawnDanger();
+        renderBoard();
+      }
     }
 
     function triggerGameOver() {
@@ -173,64 +261,42 @@
       if (score > bestScore) {
         bestScore = score;
         bestEl.innerText = bestScore;
-        localStorage.setItem('best_Cyber_Chess_Tactical', bestScore);
+        localStorage.setItem('best_chess_puzzle', bestScore);
       }
     }
 
-    function gameLoop() {
-      if (!gameActive) return;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    function renderBoard() {
+      boardEl.innerHTML = '';
+      for (let r = 0; r < 6; r++) {
+        for (let c = 0; c < 6; c++) {
+          const square = document.createElement('div');
+          const isLight = (r + c) % 2 === 0;
+          square.className = `square ${isLight ? 'light' : 'dark'}`;
+          
+          // Draw outlines for valid moves
+          if (isValidKnightMove(knightPos.r, knightPos.c, r, c)) {
+            square.classList.add('valid');
+          }
 
-      if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
-        player.x -= player.speed;
-      }
-      if (keys['ArrowRight'] || keys['d'] || keys['D']) {
-        player.x += player.speed;
-      }
-      
-      if (player.x < 0) player.x = 0;
-      if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
+          // Show dangers
+          if (dangerSquares.some(d => d.r === r && d.c === c)) {
+            square.classList.add('warning');
+          }
 
-      ctx.fillStyle = player.color;
-      ctx.beginPath();
-      ctx.roundRect ? ctx.roundRect(player.x, player.y, player.width, player.height, 4) : ctx.rect(player.x, player.y, player.width, player.height);
-      ctx.fill();
+          // Renders pieces
+          if (r === knightPos.r && c === knightPos.c) {
+            square.innerText = '♘'; // Knight symbol
+            square.style.color = '#311b92';
+          } else if (r === targetPos.r && c === targetPos.c) {
+            square.innerText = '🏆';
+          } else if (dangerSquares.some(d => d.r === r && d.c === c)) {
+            square.innerText = '💥';
+          }
 
-      spawnTimer++;
-      if (spawnTimer > Math.max(12 - score / 150, 4)) {
-        spawnItem();
-        spawnTimer = 0;
-      }
-
-      for (let i = items.length - 1; i >= 0; i--) {
-        const item = items[i];
-        item.y += item.speed;
-
-        const closestX = Math.max(player.x, Math.min(item.x, player.x + player.width));
-        const closestY = Math.max(player.y, Math.min(item.y, player.y + player.height));
-        const distanceX = item.x - closestX;
-        const distanceY = item.y - closestY;
-        const distanceSquared = (distanceX * distanceX) + (distanceY * distanceY);
-
-        if (distanceSquared < (item.radius * item.radius)) {
-          triggerGameOver();
-          return;
+          square.addEventListener('click', () => squareClick(r, c));
+          boardEl.appendChild(square);
         }
-
-        if (item.y > canvas.height + item.radius) {
-          items.splice(i, 1);
-          score += 10;
-          scoreEl.innerText = score;
-          continue;
-        }
-
-        ctx.fillStyle = item.color;
-        ctx.beginPath();
-        ctx.arc(item.x, item.y, item.radius, 0, Math.PI * 2);
-        ctx.fill();
       }
-
-      requestAnimationFrame(gameLoop);
     }
 
     startBtn.addEventListener('click', initGame);
