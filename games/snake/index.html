@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Retro Snake</title>
+  <style>
+    body {
+      margin: 0;
+      background: #f5f6fa;
+      color: #1e2229;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    h2 {
+      margin: 0 0 10px;
+      color: #2e7d32;
+      font-weight: 800;
+    }
+    .score-board {
+      display: flex;
+      gap: 30px;
+      font-size: 1.1rem;
+      margin-bottom: 15px;
+      font-weight: 700;
+      color: #575e6a;
+    }
+    canvas {
+      background: #ffffff;
+      border: 3px solid #2e7d32;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+      border-radius: 12px;
+    }
+    .game-over-screen {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.95);
+      border: 1px solid #2e7d32;
+      border-radius: 16px;
+      padding: 25px 40px;
+      text-align: center;
+      display: none;
+      flex-direction: column;
+      gap: 15px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+    }
+    .game-over-screen h3 {
+      margin: 0;
+      color: #d81b60;
+      font-size: 1.6rem;
+      font-weight: 800;
+    }
+    button {
+      background: #2e7d32;
+      border: none;
+      color: white;
+      font-weight: 700;
+      padding: 12px 24px;
+      cursor: pointer;
+      border-radius: 10px;
+      transition: transform 0.1s, box-shadow 0.1s;
+      box-shadow: 0 4px 10px rgba(46, 125, 50, 0.2);
+    }
+    button:hover {
+      transform: scale(1.04);
+      box-shadow: 0 6px 14px rgba(46, 125, 50, 0.3);
+    }
+    .controls-hint {
+      margin-top: 15px;
+      color: #8d949e;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <h2>Retro Snake</h2>
+  <div class="score-board">
+    <div>Score: <span id="score">0</span></div>
+    <div>Best: <span id="hiScore">0</span></div>
+  </div>
+  <div style="position: relative;">
+    <canvas id="gameCanvas" width="380" height="380"></canvas>
+    <div class="game-over-screen" id="gameOver">
+      <h3>GAME OVER</h3>
+      <p style="font-weight: 600;">Your Score: <span id="finalScore">0</span></p>
+      <button id="restartBtn">Play Again</button>
+    </div>
+  </div>
+  <div class="controls-hint">Use Arrow Keys or WASD to control the snake</div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('score');
+    const hiScoreEl = document.getElementById('hiScore');
+    const finalScoreEl = document.getElementById('finalScore');
+    const gameOverScreen = document.getElementById('gameOver');
+    const restartBtn = document.getElementById('restartBtn');
+
+    const grid = 20;
+    let count = 0;
+    let score = 0;
+    let hiScore = parseInt(localStorage.getItem('snake_hi')) || 0;
+    hiScoreEl.innerText = hiScore;
+
+    let snake = {
+      x: 160,
+      y: 160,
+      dx: grid,
+      dy: 0,
+      cells: [],
+      maxCells: 4
+    };
+
+    let apple = {
+      x: 320,
+      y: 320
+    };
+
+    function getRandomInt(min, max) {
+      return Math.floor(Math.random() * (max - min)) + min;
+    }
+
+    function resetGame() {
+      score = 0;
+      scoreEl.innerText = score;
+      snake.x = 160;
+      snake.y = 160;
+      snake.cells = [];
+      snake.maxCells = 4;
+      snake.dx = grid;
+      snake.dy = 0;
+      
+      apple.x = getRandomInt(0, 19) * grid;
+      apple.y = getRandomInt(0, 19) * grid;
+      
+      gameOverScreen.style.display = 'none';
+      requestAnimationFrame(loop);
+    }
+
+    function loop() {
+      if (gameOverScreen.style.display === 'flex') return;
+
+      requestAnimationFrame(loop);
+
+      if (++count < 6) {
+        return;
+      }
+      count = 0;
+
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+
+      snake.x += snake.dx;
+      snake.y += snake.dy;
+
+      if (snake.x < 0 || snake.x >= canvas.width || snake.y < 0 || snake.y >= canvas.height) {
+        triggerGameOver();
+        return;
+      }
+
+      snake.cells.unshift({x: snake.x, y: snake.y});
+
+      if (snake.cells.length > snake.maxCells) {
+        snake.cells.pop();
+      }
+
+      // Draw apple
+      ctx.fillStyle = '#d81b60';
+      ctx.beginPath();
+      ctx.arc(apple.x + grid/2, apple.y + grid/2, grid/2 - 2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Draw snake
+      ctx.fillStyle = '#2e7d32';
+      snake.cells.forEach(function(cell, index) {
+        ctx.beginPath();
+        // Give snake rounded body segments
+        ctx.roundRect ? ctx.roundRect(cell.x + 1, cell.y + 1, grid - 2, grid - 2, 4) : ctx.rect(cell.x + 1, cell.y + 1, grid - 2, grid - 2);
+        ctx.fill();
+
+        if (cell.x === apple.x && cell.y === apple.y) {
+          snake.maxCells++;
+          score += 10;
+          scoreEl.innerText = score;
+          if (score > hiScore) {
+            hiScore = score;
+            hiScoreEl.innerText = hiScore;
+            localStorage.setItem('snake_hi', hiScore);
+          }
+          apple.x = getRandomInt(0, 19) * grid;
+          apple.y = getRandomInt(0, 19) * grid;
+        }
+
+        for (let i = index + 1; i < snake.cells.length; i++) {
+          if (cell.x === snake.cells[i].x && cell.y === snake.cells[i].y) {
+            triggerGameOver();
+          }
+        }
+      });
+    }
+
+    function triggerGameOver() {
+      finalScoreEl.innerText = score;
+      gameOverScreen.style.display = 'flex';
+    }
+
+    document.addEventListener('keydown', function(e) {
+      if([32, 37, 38, 39, 40].indexOf(e.keyCode) > -1) {
+        e.preventDefault();
+      }
+
+      if ((e.which === 37 || e.which === 65) && snake.dx === 0) {
+        snake.dx = -grid;
+        snake.dy = 0;
+      }
+      else if ((e.which === 38 || e.which === 87) && snake.dy === 0) {
+        snake.dy = -grid;
+        snake.dx = 0;
+      }
+      else if ((e.which === 39 || e.which === 68) && snake.dx === 0) {
+        snake.dx = grid;
+        snake.dy = 0;
+      }
+      else if ((e.which === 40 || e.which === 83) && snake.dy === 0) {
+        snake.dy = grid;
+        snake.dx = 0;
+      }
+    });
+
+    restartBtn.addEventListener('click', resetGame);
+    resetGame();
+  </script>
+</body>
+</html>

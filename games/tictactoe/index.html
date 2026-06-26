@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Neon Tic-Tac-Toe</title>
+  <style>
+    body {
+      margin: 0;
+      background: #f5f6fa;
+      color: #1e2229;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    h2 {
+      margin-top: 0;
+      color: #6200ea;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+    }
+    .status {
+      margin-bottom: 20px;
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: #5a606d;
+    }
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 94px);
+      grid-template-rows: repeat(3, 94px);
+      gap: 12px;
+      background: #ffffff;
+      padding: 14px;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    .cell {
+      background: #f5f6fa;
+      border: 1px solid rgba(0,0,0,0.03);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.2rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+    .cell:hover {
+      background: #ffffff;
+      border-color: #0076ff;
+      box-shadow: 0 4px 12px rgba(0, 118, 255, 0.12);
+    }
+    .cell.X {
+      color: #d81b60;
+    }
+    .cell.O {
+      color: #0076ff;
+    }
+    .controls {
+      margin-top: 25px;
+      display: flex;
+      gap: 15px;
+    }
+    button {
+      background: linear-gradient(135deg, #6200ea, #0076ff);
+      border: none;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 4px 12px rgba(98, 0, 234, 0.2);
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(98, 0, 234, 0.3);
+    }
+    button:active {
+      transform: translateY(0);
+    }
+    .mode-btn {
+      background: #ffffff;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      color: #5a606d;
+      box-shadow: none;
+    }
+    .mode-btn:hover {
+      background: #f5f6fa;
+      color: #1e2229;
+      box-shadow: none;
+      transform: none;
+    }
+    .mode-btn.active {
+      background: #0076ff;
+      color: white;
+      border-color: #0076ff;
+      box-shadow: 0 4px 12px rgba(0, 118, 255, 0.2);
+    }
+  </style>
+</head>
+<body>
+  <h2>Tic-Tac-Toe</h2>
+  <div class="status" id="status">Your Turn (X)</div>
+  <div class="board" id="board">
+    <div class="cell" data-index="0"></div>
+    <div class="cell" data-index="1"></div>
+    <div class="cell" data-index="2"></div>
+    <div class="cell" data-index="3"></div>
+    <div class="cell" data-index="4"></div>
+    <div class="cell" data-index="5"></div>
+    <div class="cell" data-index="6"></div>
+    <div class="cell" data-index="7"></div>
+    <div class="cell" data-index="8"></div>
+  </div>
+  <div class="controls">
+    <button class="mode-btn active" id="modeBtn">VS AI Mode</button>
+    <button id="resetBtn">Reset</button>
+  </div>
+
+  <script>
+    const board = document.getElementById('board');
+    const cells = document.querySelectorAll('.cell');
+    const statusTxt = document.getElementById('status');
+    const resetBtn = document.getElementById('resetBtn');
+    const modeBtn = document.getElementById('modeBtn');
+
+    let gameActive = true;
+    let currentPlayer = "X";
+    let gameState = ["", "", "", "", "", "", "", "", ""];
+    let vsAI = true;
+
+    const winningConditions = [
+      [0, 1, 2], [3, 4, 5], [6, 7, 8],
+      [0, 3, 6], [1, 4, 7], [2, 5, 8],
+      [0, 4, 8], [2, 4, 6]
+    ];
+
+    function handleCellClick(e) {
+      const clickedCell = e.target;
+      const clickedCellIndex = parseInt(clickedCell.getAttribute('data-index'));
+
+      if (gameState[clickedCellIndex] !== "" || !gameActive) return;
+
+      makeMove(clickedCellIndex, currentPlayer);
+      checkResult();
+
+      if (gameActive && vsAI && currentPlayer === "O") {
+        statusTxt.innerText = "AI is thinking...";
+        setTimeout(makeAIMove, 400);
+      }
+    }
+
+    function makeMove(index, player) {
+      gameState[index] = player;
+      cells[index].innerText = player;
+      cells[index].classList.add(player);
+      currentPlayer = currentPlayer === "X" ? "O" : "X";
+      statusTxt.innerText = vsAI 
+        ? (currentPlayer === "X" ? "Your Turn (X)" : "AI is thinking...")
+        : "Player " + currentPlayer + "'s Turn";
+    }
+
+    function makeAIMove() {
+      if (!gameActive) return;
+      
+      let move = findWinningMove("O");
+      if (move === null) move = findWinningMove("X");
+      if (move === null && gameState[4] === "") move = 4;
+      if (move === null) {
+        const available = gameState.map((val, idx) => val === "" ? idx : null).filter(val => val !== null);
+        if (available.length > 0) {
+          move = available[Math.floor(Math.random() * available.length)];
+        }
+      }
+
+      if (move !== null) {
+        makeMove(move, "O");
+        checkResult();
+      }
+    }
+
+    function findWinningMove(player) {
+      for (let cond of winningConditions) {
+        const [a, b, c] = cond;
+        const vals = [gameState[a], gameState[b], gameState[c]];
+        const playerCount = vals.filter(v => v === player).length;
+        const emptyCount = vals.filter(v => v === "").length;
+        if (playerCount === 2 && emptyCount === 1) {
+          if (gameState[a] === "") return a;
+          if (gameState[b] === "") return b;
+          if (gameState[c] === "") return c;
+        }
+      }
+      return null;
+    }
+
+    function checkResult() {
+      let roundWon = false;
+      let winner = "";
+
+      for (let i = 0; i < winningConditions.length; i++) {
+        const winCondition = winningConditions[i];
+        let a = gameState[winCondition[0]];
+        let b = gameState[winCondition[1]];
+        let c = gameState[winCondition[2]];
+        if (a === '' || b === '' || c === '') continue;
+        if (a === b && b === c) {
+          roundWon = true;
+          winner = a;
+          break;
+        }
+      }
+
+      if (roundWon) {
+        gameActive = false;
+        if (vsAI) {
+          statusTxt.innerText = winner === "X" ? "🎉 You Won!" : "🤖 AI Won!";
+        } else {
+          statusTxt.innerText = "🎉 Player " + winner + " Won!";
+        }
+        return;
+      }
+
+      let roundDraw = !gameState.includes("");
+      if (roundDraw) {
+        gameActive = false;
+        statusTxt.innerText = "🤝 Draw Game!";
+        return;
+      }
+    }
+
+    function resetGame() {
+      gameActive = true;
+      currentPlayer = "X";
+      gameState = ["", "", "", "", "", "", "", "", ""];
+      statusTxt.innerText = "Your Turn (X)";
+      cells.forEach(cell => {
+        cell.innerText = "";
+        cell.className = "cell";
+      });
+    }
+
+    function toggleMode() {
+      vsAI = !vsAI;
+      modeBtn.classList.toggle('active', vsAI);
+      modeBtn.innerText = vsAI ? "VS AI Mode" : "2 Players Mode";
+      resetGame();
+    }
+
+    board.addEventListener('click', handleCellClick);
+    resetBtn.addEventListener('click', resetGame);
+    modeBtn.addEventListener('click', toggleMode);
+  </script>
+</body>
+</html>

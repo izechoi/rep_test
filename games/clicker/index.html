@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clicker Quest</title>
+  <style>
+    body {
+      margin: 0;
+      background: #f5f6fa;
+      color: #1e2229;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+    .container {
+      background: #ffffff;
+      padding: 30px;
+      border-radius: 20px;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+      text-align: center;
+      width: 100%;
+      max-width: 380px;
+    }
+    h2 {
+      margin-top: 0;
+      color: #e65100;
+      font-weight: 800;
+    }
+    .score-container {
+      font-size: 2.4rem;
+      font-weight: 800;
+      margin: 15px 0;
+      color: #e65100;
+    }
+    .cps {
+      font-size: 0.9rem;
+      color: #575e6a;
+      margin-bottom: 25px;
+      font-weight: 600;
+    }
+    .click-btn {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #ffaa00, #ff5500);
+      border: 4px solid #ffd700;
+      box-shadow: 0 6px 18px rgba(255, 85, 0, 0.25);
+      cursor: pointer;
+      color: white;
+      font-size: 1.4rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 30px;
+      user-select: none;
+      transition: transform 0.05s, box-shadow 0.1s;
+    }
+    .click-btn:active {
+      transform: scale(0.96);
+      box-shadow: 0 4px 10px rgba(255, 85, 0, 0.3);
+    }
+    .upgrades {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      text-align: left;
+    }
+    .upgrade-item {
+      background: #f4f6f8;
+      border: 1px solid rgba(0,0,0,0.03);
+      border-radius: 12px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .upgrade-item:hover {
+      background: #ffffff;
+      border-color: #ffaa00;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+    }
+    .upgrade-info h4 {
+      margin: 0 0 4px;
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+    .upgrade-info p {
+      margin: 0;
+      font-size: 0.8rem;
+      color: #8d949e;
+    }
+    .upgrade-cost {
+      background: #ff5500;
+      color: white;
+      font-weight: 800;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+    }
+    .upgrade-item.disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .upgrade-item.disabled .upgrade-cost {
+      background: #ccd0d5;
+      color: #8d949e;
+    }
+    .reset {
+      margin-top: 25px;
+      color: #8d949e;
+      font-size: 0.8rem;
+      cursor: pointer;
+      text-decoration: underline;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Clicker Quest</h2>
+    <div class="score-container"><span id="gold">0</span> 🪙</div>
+    <div class="cps">Gold/sec: <span id="gps">0</span> | Per Tap: <span id="gpc">1</span></div>
+    
+    <div class="click-btn" id="clickBtn">TAP!</div>
+
+    <div class="upgrades">
+      <div class="upgrade-item disabled" id="upg1">
+        <div class="upgrade-info">
+          <h4>Auto Miner</h4>
+          <p>Produces +1 Gold/sec</p>
+        </div>
+        <div class="upgrade-cost" id="cost1">15</div>
+      </div>
+      <div class="upgrade-item disabled" id="upg2">
+        <div class="upgrade-info">
+          <h4>Super Pickaxe</h4>
+          <p>Gives +1 Gold per click</p>
+        </div>
+        <div class="upgrade-cost" id="cost2">50</div>
+      </div>
+    </div>
+    <div class="reset" id="resetBtn">Reset Game</div>
+  </div>
+
+  <script>
+    let gold = parseInt(localStorage.getItem('cq_gold')) || 0;
+    let gps = parseInt(localStorage.getItem('cq_gps')) || 0;
+    let gpc = parseInt(localStorage.getItem('cq_gpc')) || 1;
+    let cost1 = parseInt(localStorage.getItem('cq_cost1')) || 15;
+    let cost2 = parseInt(localStorage.getItem('cq_cost2')) || 50;
+
+    const goldEl = document.getElementById('gold');
+    const gpsEl = document.getElementById('gps');
+    const gpcEl = document.getElementById('gpc');
+    const clickBtn = document.getElementById('clickBtn');
+    const upg1 = document.getElementById('upg1');
+    const upg2 = document.getElementById('upg2');
+    const cost1El = document.getElementById('cost1');
+    const cost2El = document.getElementById('cost2');
+    const resetBtn = document.getElementById('resetBtn');
+
+    function updateUI() {
+      goldEl.innerText = Math.floor(gold);
+      gpsEl.innerText = gps;
+      gpcEl.innerText = gpc;
+      cost1El.innerText = cost1;
+      cost2El.innerText = cost2;
+
+      upg1.classList.toggle('disabled', gold < cost1);
+      upg2.classList.toggle('disabled', gold < cost2);
+    }
+
+    function saveGame() {
+      localStorage.setItem('cq_gold', gold);
+      localStorage.setItem('cq_gps', gps);
+      localStorage.setItem('cq_gpc', gpc);
+      localStorage.setItem('cq_cost1', cost1);
+      localStorage.setItem('cq_cost2', cost2);
+    }
+
+    clickBtn.addEventListener('click', () => {
+      gold += gpc;
+      updateUI();
+      saveGame();
+    });
+
+    upg1.addEventListener('click', () => {
+      if (gold >= cost1) {
+        gold -= cost1;
+        gps += 1;
+        cost1 = Math.floor(cost1 * 1.5);
+        updateUI();
+        saveGame();
+      }
+    });
+
+    upg2.addEventListener('click', () => {
+      if (gold >= cost2) {
+        gold -= cost2;
+        gpc += 1;
+        cost2 = Math.floor(cost2 * 1.8);
+        updateUI();
+        saveGame();
+      }
+    });
+
+    resetBtn.addEventListener('click', () => {
+      if(confirm('Are you sure you want to reset your score?')) {
+        gold = 0;
+        gps = 0;
+        gpc = 1;
+        cost1 = 15;
+        cost2 = 50;
+        updateUI();
+        saveGame();
+      }
+    });
+
+    setInterval(() => {
+      if (gps > 0) {
+        gold += gps / 10;
+        updateUI();
+      }
+    }, 100);
+
+    setInterval(saveGame, 5000);
+    updateUI();
+  </script>
+</body>
+</html>
