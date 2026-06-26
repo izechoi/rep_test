@@ -81,22 +81,37 @@ export default function App() {
     }
   }, [filteredGames, games, navigate]);
 
+  // 장르 카테고리 선택 시 처리기: 장르 필터를 반영하고 항상 메인 로비(/)로 이동시킵니다.
+  const handleGenreSelect = useCallback((genre) => {
+    setActiveGenre(genre);
+    navigate('/');
+  }, [navigate]);
+
+  // 로고/브랜드 클릭 시 처리기: 검색어와 장르 필터를 전체로 초기화하고 첫페이지(/)로 돌아갑니다.
+  const handleLogoClick = useCallback(() => {
+    setSearchQuery('');
+    setActiveGenre('All');
+    navigate('/');
+  }, [navigate]);
+
   const subtitle = translations[language].main_subtitle.replace('{count}', filteredGames.length);
 
   return (
     <div className="app-container">
-      {/* 1. 데스크톱용 좌측 사이드바 메뉴 */}
+      {/* 1. 데스크톱용 좌측 사이드바 메뉴 (로고 클릭 및 장르 필터 연동 추가) */}
       <Sidebar
         activeGenre={activeGenre}
-        setActiveGenre={setActiveGenre}
+        onGenreSelect={handleGenreSelect}
+        onLogoClick={handleLogoClick}
         onRandomPlay={handleRandomPlay}
         language={language}
       />
       
-      {/* 2. 상단 범용 내비게이션 바 */}
+      {/* 2. 상단 범용 내비게이션 바 (모바일 로고 대응을 위한 로고 클릭 연동 추가) */}
       <Navbar
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
+        onLogoClick={handleLogoClick}
         language={language}
         setLanguage={setLanguage}
       />
@@ -113,7 +128,7 @@ export default function App() {
                   <button
                     key={genre}
                     className={`mobile-chip ${activeGenre === genre ? 'active' : ''}`}
-                    onClick={() => setActiveGenre(genre)}
+                    onClick={() => handleGenreSelect(genre)}
                   >
                     {translations[language]['genre_' + genre]}
                   </button>

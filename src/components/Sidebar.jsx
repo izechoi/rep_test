@@ -5,13 +5,20 @@ const CATEGORIES = ['All', 'Arcade', 'Puzzle', 'Action', 'Strategy', 'Board'];
 
 export default function Sidebar({
   activeGenre,
-  setActiveGenre,
+  onGenreSelect,
+  onLogoClick,
   onRandomPlay,
   language
 }) {
   return (
     <aside className="sidebar">
-      <div className="sidebar-brand">
+      {/* 로고 영역 클릭 시 첫페이지 이동(검색/필터 초기화) 처리 */}
+      <div 
+        className="sidebar-brand" 
+        onClick={onLogoClick} 
+        style={{ cursor: 'pointer' }}
+        title={translations[language].genre_All}
+      >
         <div className="logo-icon">G</div>
         <span className="logo-text">GAME PORTAL</span>
       </div>
@@ -23,7 +30,7 @@ export default function Sidebar({
             <li
               key={genre}
               className={`menu-item ${activeGenre === genre ? 'active' : ''}`}
-              onClick={() => setActiveGenre(genre)}
+              onClick={() => onGenreSelect(genre)}
             >
               <span>{translations[language]['genre_' + genre]}</span>
             </li>

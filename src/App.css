@@ -137,6 +137,10 @@
   z-index: 9;
 }
 
+.navbar-brand {
+  display: none; /* 데스크톱 모드에서는 좌측 사이드바가 이미 있으므로 로고를 숨김 */
+}
+
 .search-container {
   position: relative;
   width: 100%;
@@ -929,8 +933,37 @@
     padding: 0 16px;
   }
 
+  .navbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-right: 12px;
+  }
+
+  .navbar-logo-icon {
+    width: 28px;
+    height: 28px;
+    background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 800;
+    font-size: 0.95rem;
+    box-shadow: 0 2px 8px rgba(0, 118, 255, 0.2);
+  }
+
+  .navbar-logo-text {
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: 0.02em;
+  }
+
   .search-container {
-    max-width: 200px;
+    max-width: 150px; /* 모바일 로고 영역 확보를 위해 검색창 너비 축소 */
+    flex-grow: 1;
   }
 
   .search-input {
@@ -1045,11 +1078,15 @@
     font-size: 0.9rem;
   }
   .detail-iframe-container {
-    height: 500px; /* 게임 보드판과 내부 조작 버튼이 겹침 없이 모바일 한 화면에 완전히 들어오도록 넉넉한 높이로 설정 */
-    max-height: 70vh; /* 세로 해상도가 매우 작은 모바일 기기에서의 과도한 오버플로우 방지 */
+    width: 100%;
+    aspect-ratio: 1 / 1; /* 정사각형 비율로 종횡비를 묶어 기기 가로폭에 높이가 자연스레 동조되게 세팅 */
+    min-height: 320px;
+    max-height: 60vh; /* 세로 화면에서도 컨트롤바나 가이드가 잘리지 않도록 높이 범위 제한 */
+    background: var(--bg-primary);
   }
   .detail-player-controls {
-    padding: 12px 16px;
+    padding: 10px 16px;
+    margin-top: 8px; /* 물리적 틈새를 좁혀서 공간 효율성 상향 */
   }
   .guide-card {
     padding: 16px;

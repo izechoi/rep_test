@@ -4,11 +4,23 @@ import { translations } from '../data/translations';
 export default function Navbar({ 
   searchQuery, 
   setSearchQuery, 
+  onLogoClick,
   language, 
   setLanguage 
 }) {
   return (
     <nav className="navbar">
+      {/* 모바일 화면에서 노출될 브랜드 미니 로고 (클릭 시 첫페이지 이동) */}
+      <div 
+        className="navbar-brand" 
+        onClick={onLogoClick} 
+        style={{ cursor: 'pointer' }}
+        title={translations[language].genre_All}
+      >
+        <div className="navbar-logo-icon">G</div>
+        <span className="navbar-logo-text">GAME PORTAL</span>
+      </div>
+
       <div className="search-container">
         <svg
           className="search-icon"

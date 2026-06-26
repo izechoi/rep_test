@@ -121,11 +121,9 @@ export default function GameDetailPage({ onGamePlayed, language }) {
             ></iframe>
           </div>
           
-          {/* 게임 제어 컨트롤 바 */}
+          {/* 게임 제어 컨트롤 바 (평점 평가 제거 및 레이아웃 유지) */}
           <div className="detail-player-controls">
-            <span className="control-game-rating">
-              ★ {game.rating.toFixed(1)}
-            </span>
+            <div className="control-placeholder"></div>
             <div className="control-buttons">
               <button className="player-action-btn" onClick={handleRestart}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
